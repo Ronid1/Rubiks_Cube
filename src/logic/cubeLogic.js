@@ -42,8 +42,13 @@ export class cubeLogic {
 
     if (axis === "x") this.rotateX(circularPlane, rowNum);
     else this.rotateYZ(circularPlane, rowNum);
+
+    //rotating row 0 or 2 will cause corresponding face to spin
+    if (rowNum != 1)
+      this.rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction);
   }
 
+  //TO DO: rotate row 0,2 will cause bot/top to spin
   rotateX(circularPlane, rowNum) {
     const [firstFace] = circularPlane;
     const copyFirstRow = this.cubeState[firstFace][rowNum];
@@ -56,6 +61,7 @@ export class cubeLogic {
     });
   }
 
+  //TO DO: rotate row 0,2 will cause back front or left/right  to spin
   rotateYZ(circularPlane, colNum) {
     const [firstFace] = circularPlane;
     const copyFirstcol = this.cubeState[firstFace].map((row) => {
@@ -80,6 +86,34 @@ export class cubeLogic {
     });
   }
 
+  rotateFace(face, direction) {
+    let faceCopy = this.cubeState[face].map((arr) => {
+      return arr.slice();
+    });
+
+    //row0 = ex_col0, row1 = ex_col1, row2 = ex_col2
+    if (direction === globals.DIRECTIONS.colckwise) {
+      for (let index = 0; index < globals.ROW_SIZE; index++) {
+        const colCopy = faceCopy.map((row) => {
+          return row[index];
+        });
+
+        this.cubeState[face][index] = colCopy;
+      }
+    }
+
+    //row0 = ex_col2, row1 = ex_col1, row2 = ex_col0
+    else {
+      for (let index = globals.ROW_SIZE; index >= 0; index--) {
+        const colCopy = faceCopy.map((row) => {
+          return row[index];
+        });
+
+        this.cubeState[face][Math.abs(index - globals.ROW_SIZE)] = colCopy;
+      }
+    }
+  }
+
   shuffle() {
     const axes = ["x", "y", "z"];
     const numOfRotates = this.random(31, 16);
@@ -87,7 +121,7 @@ export class cubeLogic {
       const axis = axes[this.random(3)];
       const row = this.random(globals.ROW_SIZE);
       const direction = Object.keys(globals.DIRECTIONS)[this.random(2)];
-      console.log(`axis: ${axis}, row: ${row}, direction: ${direction}`)
+      console.log(`axis: ${axis}, row: ${row}, direction: ${direction}`);
       this.rotate(axis, row, direction);
     });
   }
