@@ -6,8 +6,8 @@ export const PLAINS = {
   z: ['front', 'top', 'back', 'bottom'],
 };
 export const CHAIN_REACTION = {
-    x: {0:'top', 2:'bottom'},
-    y: {0:'back', 2:'front'},
-    z: {0:'left', 2:'right'}
+    x: {0:'top', [ROW_SIZE-1]:'bottom'},
+    y: {0:'back', [ROW_SIZE-1]:'front'},
+    z: {0:'left', [ROW_SIZE-1]:'right'}
 }
 export const COLORS = ["green", "blue", "white", "yellow", "red", "orange"];
