@@ -48,7 +48,6 @@ export class cubeLogic {
       this.rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction);
   }
 
-  //TO DO: rotate row 0,2 will cause bot/top to spin
   rotateX(circularPlane, rowNum) {
     const [firstFace] = circularPlane;
     const copyFirstRow = this.cubeState[firstFace][rowNum];
@@ -61,7 +60,6 @@ export class cubeLogic {
     });
   }
 
-  //TO DO: rotate row 0,2 will cause back front or left/right  to spin
   rotateYZ(circularPlane, colNum) {
     const [firstFace] = circularPlane;
     const copyFirstcol = this.cubeState[firstFace].map((row) => {
@@ -130,54 +128,54 @@ export class cubeLogic {
     return Math.floor(Math.random() * (max - min) + min);
   }
 
-  getSharedCubes() {
-    const lastIndex = globals.ROW_SIZE - 1;
+  // getSharedCubes() {
+  //   const lastIndex = globals.ROW_SIZE - 1;
 
-    let corners = [
-      { front: [0, 0], top: [lastIndex, 0], left: [0, lastIndex] },
-      {
-        front: [0, lastIndex],
-        top: [lastIndex, lastIndex],
-        right: [0, 0],
-      },
-      {
-        front: [lastIndex, 0],
-        bottom: [0, 0],
-        left: [lastIndex, lastIndex],
-      },
-      {
-        front: [lastIndex, lastIndex],
-        bottom: [0, lastIndex],
-        right: [lastIndex, 0],
-      },
+  //   let corners = [
+  //     { front: [0, 0], top: [lastIndex, 0], left: [0, lastIndex] },
+  //     {
+  //       front: [0, lastIndex],
+  //       top: [lastIndex, lastIndex],
+  //       right: [0, 0],
+  //     },
+  //     {
+  //       front: [lastIndex, 0],
+  //       bottom: [0, 0],
+  //       left: [lastIndex, lastIndex],
+  //     },
+  //     {
+  //       front: [lastIndex, lastIndex],
+  //       bottom: [0, lastIndex],
+  //       right: [lastIndex, 0],
+  //     },
 
-      { back: [0, 0], top: [0, 0], left: [0, 0] },
-      {
-        back: [0, lastIndex],
-        top: [0, lastIndex],
-        right: [0, lastIndex],
-      },
-      { back: [lastIndex, 0], bottom: [0, 0], left: [lastIndex, 0] },
-      {
-        back: [lastIndex, lastIndex],
-        bottom: [lastIndex, 0],
-        right: [lastIndex, lastIndex],
-      },
-    ];
+  //     { back: [0, 0], top: [0, 0], left: [0, 0] },
+  //     {
+  //       back: [0, lastIndex],
+  //       top: [0, lastIndex],
+  //       right: [0, lastIndex],
+  //     },
+  //     { back: [lastIndex, 0], bottom: [0, 0], left: [lastIndex, 0] },
+  //     {
+  //       back: [lastIndex, lastIndex],
+  //       bottom: [lastIndex, 0],
+  //       right: [lastIndex, lastIndex],
+  //     },
+  //   ];
 
-    let edges = [];
-    for (let i = 1; i < lastIndex; i++) {
-      edges.push({ front: [0, i], top: [lastIndex, i] });
-      edges.push({ front: [i, 0], left: [i, lastIndex] });
-      edges.push({ front: [i, lastIndex], right: [0, i] });
-      edges.push({ front: [i, i], bottom: [0, i] });
+  //   let edges = [];
+  //   for (let i = 1; i < lastIndex; i++) {
+  //     edges.push({ front: [0, i], top: [lastIndex, i] });
+  //     edges.push({ front: [i, 0], left: [i, lastIndex] });
+  //     edges.push({ front: [i, lastIndex], right: [0, i] });
+  //     edges.push({ front: [i, i], bottom: [0, i] });
 
-      edges.push({ back: [0, i], top: [0, i] });
-      edges.push({ back: [i, 0], left: [i, 0] });
-      edges.push({ back: [i, lastIndex], right: [i, lastIndex] });
-      edges.push({ back: [i, i], bottom: [lastIndex, i] });
-    }
+  //     edges.push({ back: [0, i], top: [0, i] });
+  //     edges.push({ back: [i, 0], left: [i, 0] });
+  //     edges.push({ back: [i, lastIndex], right: [i, lastIndex] });
+  //     edges.push({ back: [i, i], bottom: [lastIndex, i] });
+  //   }
 
-    return [...corners, ...edges];
-  }
+  //   return [...corners, ...edges];
+  // }
 }
