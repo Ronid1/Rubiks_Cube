@@ -152,7 +152,7 @@ var CHAIN_REACTION = {
   }, ROW_SIZE - 1, 'right')
 };
 exports.CHAIN_REACTION = CHAIN_REACTION;
-var COLORS = ["green", "blue", "white", "yellow", "red", "#e8651a"];
+var COLORS = ["red", "#e8651a", "yellow", "white", "green", "blue"];
 exports.COLORS = COLORS;
 },{}],"logic/cubeLogic.js":[function(require,module,exports) {
 "use strict";
@@ -204,10 +204,10 @@ var cubeLogic = /*#__PURE__*/function () {
     this.cubeState = {
       right: [],
       left: [],
-      bottom: [],
       top: [],
-      back: [],
-      front: []
+      bottom: [],
+      front: [],
+      back: []
     };
     this.initializeCube();
   }
@@ -41037,7 +41037,7 @@ var cubeVisual = /*#__PURE__*/function () {
       var directLight = new THREE.AmbientLight(0xffffff, 0.7);
       directLight.position.set(10, 20, 0);
       this.scene.add(directLight);
-      this.camera.position.set(-1, 1, 7);
+      this.camera.position.set(5, 3, -3);
       window.addEventListener("resize", this.onWindowResize, false);
     }
   }, {
@@ -41110,10 +41110,10 @@ var cubeVisual = /*#__PURE__*/function () {
       this.positions.forEach(function (position, index) {
         if (position[x] === minPos) _this.faceToindex["left"][Math.floor(position[z]) + 1][Math.floor(position[y]) + 1] = index;
         if (position[x] === maxPos) _this.faceToindex["right"][Math.floor(position[z]) + 1][Math.floor(position[y]) + 1] = index;
-        if (position[y] === minPos) _this.faceToindex["top"][Math.floor(position[z]) + 1][Math.floor(position[x]) + 1] = index;
-        if (position[y] === maxPos) _this.faceToindex["bottom"][Math.floor(position[z]) + 1][Math.floor(position[x]) + 1] = index;
-        if (position[z] === minPos) _this.faceToindex["front"][Math.floor(position[x]) + 1][Math.floor(position[y]) + 1] = index;
-        if (position[z] === maxPos) _this.faceToindex["back"][Math.floor(position[x]) + 1][Math.floor(position[y]) + 1] = index;
+        if (position[y] === minPos) _this.faceToindex["bottom"][Math.floor(position[z]) + 1][Math.floor(position[x]) + 1] = index;
+        if (position[y] === maxPos) _this.faceToindex["top"][Math.floor(position[z]) + 1][Math.floor(position[x]) + 1] = index;
+        if (position[z] === minPos) _this.faceToindex["back"][Math.floor(position[x]) + 1][Math.floor(position[y]) + 1] = index;
+        if (position[z] === maxPos) _this.faceToindex["front"][Math.floor(position[x]) + 1][Math.floor(position[y]) + 1] = index;
       });
     }
   }, {
@@ -41134,27 +41134,29 @@ var cubeVisual = /*#__PURE__*/function () {
         var faces = [];
         if (position[x] === minPos) faces.push("left");
         if (position[x] === maxPos) faces.push("right");
-        if (position[y] === minPos) faces.push("top");
-        if (position[y] === maxPos) faces.push("bottom");
-        if (position[z] === minPos) faces.push("front");
-        if (position[z] === maxPos) faces.push("back");
+        if (position[y] === minPos) faces.push("bottom");
+        if (position[y] === maxPos) faces.push("top");
+        if (position[z] === minPos) faces.push("back");
+        if (position[z] === maxPos) faces.push("front");
         _this2.indexToFaces[index] = faces;
       });
     }
   }, {
     key: "initiateCube",
     value: function initiateCube(index, cubeSize) {
+      var _this3 = this;
+
       var numOfFaces = 6;
       var Faces = {
         right: 0,
         left: 1,
-        bottom: 2,
-        top: 3,
-        back: 4,
-        front: 5
+        top: 2,
+        bottom: 3,
+        front: 4,
+        back: 5
       };
       var defaultColor = new THREE.MeshPhongMaterial({
-        color: '#1e1e1f'
+        color: "#1e1e1f"
       });
       var material = [];
 
@@ -41166,12 +41168,32 @@ var cubeVisual = /*#__PURE__*/function () {
       var visableFaces = this.indexToFaces[index];
       visableFaces.forEach(function (face) {
         material[Faces[face]] = new THREE.MeshPhongMaterial({
-          color: globals.COLORS[Faces[face]]
+          color: _this3.getCellsColor(face, index)
         });
       });
       var cube = new THREE.Mesh(geometry, material);
       return cube;
     }
+  }, {
+    key: "getCellsColor",
+    value: function getCellsColor(face, cubeIndex) {
+      var _this4 = this;
+
+      var row, col;
+      this.faceToindex[face].forEach(function (val, r) {
+        for (var i = 0; i < _this4.faceToindex[face].length; i++) {
+          if (_this4.faceToindex[face][r][i] === cubeIndex) {
+            row = r;
+            col = i;
+            break;
+          }
+        }
+      });
+      return this.cubeLogic.getState()[face][row][col];
+    }
+  }, {
+    key: "updateCube",
+    value: function updateCube() {}
   }]);
 
   return cubeVisual;
@@ -41191,9 +41213,9 @@ function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "functio
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-var logic = new _cubeLogic.cubeLogic();
+var logic = new _cubeLogic.cubeLogic(); //console.log(logic.getState())
+
 var view = new _cubeVisual.cubeVisual(logic);
-console.log(logic.getState());
 },{"./logic/cubeLogic":"logic/cubeLogic.js","./view/cubeVisual":"view/cubeVisual.js","./logic/globals":"logic/globals.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

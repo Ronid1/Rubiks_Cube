@@ -9,10 +9,10 @@ export class cubeLogic {
     this.cubeState = {
       right: [],
       left: [],
-      bottom: [],
       top: [],
-      back: [],
+      bottom: [],
       front: [],
+      back: [],
     };
 
     this.initializeCube();

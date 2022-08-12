@@ -38,7 +38,7 @@ export class cubeVisual {
     const directLight = new THREE.AmbientLight(0xffffff, 0.7);
     directLight.position.set(10, 20, 0);
     this.scene.add(directLight);
-    this.camera.position.set(-1, 1, 7);
+    this.camera.position.set(5, 3, -3);
 
     window.addEventListener("resize", this.onWindowResize, false);
   }
@@ -109,19 +109,19 @@ export class cubeVisual {
           Math.floor(position[y]) + 1
         ] = index;
       if (position[y] === minPos)
-        this.faceToindex["top"][Math.floor(position[z]) + 1][
-          Math.floor(position[x]) + 1
-        ] = index;
-      if (position[y] === maxPos)
         this.faceToindex["bottom"][Math.floor(position[z]) + 1][
           Math.floor(position[x]) + 1
         ] = index;
+      if (position[y] === maxPos)
+        this.faceToindex["top"][Math.floor(position[z]) + 1][
+          Math.floor(position[x]) + 1
+        ] = index;
       if (position[z] === minPos)
-        this.faceToindex["front"][Math.floor(position[x]) + 1][
+        this.faceToindex["back"][Math.floor(position[x]) + 1][
           Math.floor(position[y]) + 1
         ] = index;
       if (position[z] === maxPos)
-        this.faceToindex["back"][Math.floor(position[x]) + 1][
+        this.faceToindex["front"][Math.floor(position[x]) + 1][
           Math.floor(position[y]) + 1
         ] = index;
     });
@@ -137,10 +137,10 @@ export class cubeVisual {
       let faces = [];
       if (position[x] === minPos) faces.push("left");
       if (position[x] === maxPos) faces.push("right");
-      if (position[y] === minPos) faces.push("top");
-      if (position[y] === maxPos) faces.push("bottom");
-      if (position[z] === minPos) faces.push("front");
-      if (position[z] === maxPos) faces.push("back");
+      if (position[y] === minPos) faces.push("bottom");
+      if (position[y] === maxPos) faces.push("top");
+      if (position[z] === minPos) faces.push("back");
+      if (position[z] === maxPos) faces.push("front");
 
       this.indexToFaces[index] = faces;
     });
@@ -148,9 +148,9 @@ export class cubeVisual {
 
   initiateCube(index, cubeSize) {
     const numOfFaces = 6;
-    const Faces = { right: 0, left: 1, bottom: 2, top: 3, back: 4, front: 5 };
+    const Faces = { right: 0, left: 1, top: 2, bottom: 3, front: 4, back: 5 };
 
-    const defaultColor = new THREE.MeshPhongMaterial({ color: '#1e1e1f' });
+    const defaultColor = new THREE.MeshPhongMaterial({ color: "#1e1e1f" });
     let material = [];
 
     [...Array(numOfFaces)].forEach(() => material.push(defaultColor));
@@ -159,7 +159,7 @@ export class cubeVisual {
     const visableFaces = this.indexToFaces[index];
     visableFaces.forEach((face) => {
       material[Faces[face]] = new THREE.MeshPhongMaterial({
-        color: globals.COLORS[Faces[face]],
+        color: this.getCellsColor(face, index),
       });
     });
 
@@ -167,4 +167,21 @@ export class cubeVisual {
 
     return cube;
   }
+
+  getCellsColor(face, cubeIndex) {
+    let row, col;
+    this.faceToindex[face].forEach((val, r) => {
+      for (let i = 0; i < this.faceToindex[face].length; i++) {
+        if (this.faceToindex[face][r][i] === cubeIndex) {
+          row = r;
+          col = i;
+          break;
+        }
+      }
+    });
+
+    return this.cubeLogic.getState()[face][row][col];
+  }
+
+  updateCube() {}
 }
