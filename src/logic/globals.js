@@ -10,4 +10,4 @@ export const CHAIN_REACTION = {
     y: {0:'back', [ROW_SIZE-1]:'front'},
     z: {0:'left', [ROW_SIZE-1]:'right'}
 }
-export const COLORS = ["green", "blue", "white", "yellow", "red", "orange"];
+export const COLORS = ["green", "blue", "white", "yellow", "red", "#e8651a"];

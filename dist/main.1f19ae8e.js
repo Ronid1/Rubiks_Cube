@@ -152,7 +152,7 @@ var CHAIN_REACTION = {
   }, ROW_SIZE - 1, 'right')
 };
 exports.CHAIN_REACTION = CHAIN_REACTION;
-var COLORS = ["green", "blue", "white", "yellow", "red", "orange"];
+var COLORS = ["green", "blue", "white", "yellow", "red", "#e8651a"];
 exports.COLORS = COLORS;
 },{}],"logic/cubeLogic.js":[function(require,module,exports) {
 "use strict";
@@ -202,12 +202,12 @@ var cubeLogic = /*#__PURE__*/function () {
     _classCallCheck(this, cubeLogic);
 
     this.cubeState = {
-      front: [],
-      back: [],
-      top: [],
-      bottom: [],
       right: [],
-      left: []
+      left: [],
+      bottom: [],
+      top: [],
+      back: [],
+      front: []
     };
     this.initializeCube();
   }
@@ -347,52 +347,7 @@ var cubeLogic = /*#__PURE__*/function () {
     value: function random(max) {
       var min = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       return Math.floor(Math.random() * (max - min) + min);
-    } // getSharedCubes() {
-    //   const lastIndex = globals.ROW_SIZE - 1;
-    //   let corners = [
-    //     { front: [0, 0], top: [lastIndex, 0], left: [0, lastIndex] },
-    //     {
-    //       front: [0, lastIndex],
-    //       top: [lastIndex, lastIndex],
-    //       right: [0, 0],
-    //     },
-    //     {
-    //       front: [lastIndex, 0],
-    //       bottom: [0, 0],
-    //       left: [lastIndex, lastIndex],
-    //     },
-    //     {
-    //       front: [lastIndex, lastIndex],
-    //       bottom: [0, lastIndex],
-    //       right: [lastIndex, 0],
-    //     },
-    //     { back: [0, 0], top: [0, 0], left: [0, 0] },
-    //     {
-    //       back: [0, lastIndex],
-    //       top: [0, lastIndex],
-    //       right: [0, lastIndex],
-    //     },
-    //     { back: [lastIndex, 0], bottom: [0, 0], left: [lastIndex, 0] },
-    //     {
-    //       back: [lastIndex, lastIndex],
-    //       bottom: [lastIndex, 0],
-    //       right: [lastIndex, lastIndex],
-    //     },
-    //   ];
-    //   let edges = [];
-    //   for (let i = 1; i < lastIndex; i++) {
-    //     edges.push({ front: [0, i], top: [lastIndex, i] });
-    //     edges.push({ front: [i, 0], left: [i, lastIndex] });
-    //     edges.push({ front: [i, lastIndex], right: [0, i] });
-    //     edges.push({ front: [i, i], bottom: [0, i] });
-    //     edges.push({ back: [0, i], top: [0, i] });
-    //     edges.push({ back: [i, 0], left: [i, 0] });
-    //     edges.push({ back: [i, lastIndex], right: [i, lastIndex] });
-    //     edges.push({ back: [i, i], bottom: [lastIndex, i] });
-    //   }
-    //   return [...corners, ...edges];
-    // }
-
+    }
   }]);
 
   return cubeLogic;
@@ -41044,20 +40999,12 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToAr
 
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
-// https://www.youtube.com/watch?v=xJAfLdUgdc4
-// https://github.com/filipw01/threejs-rubiks-cube/blob/master/RubiksCube.js
 var cubeVisual = /*#__PURE__*/function () {
   function cubeVisual(cubeLogic) {
     _classCallCheck(this, cubeVisual);
@@ -41069,14 +41016,13 @@ var cubeVisual = /*#__PURE__*/function () {
     this.controls = new _OrbitControls.OrbitControls(this.camera, this.renderer.domElement); //cube managment
 
     this.cubeLogic = cubeLogic;
-    this.positions = []; //this.indexToFaces = {};
-
-    this.faceToindex = _objectSpread({}, this.cubeLogic.getState()); //start game
+    this.positions = [];
+    this.indexToFaces = {};
+    this.faceToindex = structuredClone(this.cubeLogic.getState()); //start game
 
     this.initiateScene();
     this.animate();
     this.initiateRubiks();
-    this.mapFaceToIndex();
   }
 
   _createClass(cubeVisual, [{
@@ -41113,13 +41059,15 @@ var cubeVisual = /*#__PURE__*/function () {
     value: function initiateRubiks() {
       var cubeSize = 1;
       this.positions = this.initiateCubesPositions(cubeSize);
+      this.mapFaceToIndex();
+      this.mapIndexToFace();
       var group = new THREE.Group();
 
       for (var index = 0; index < Math.pow(globals.ROW_SIZE, globals.ROW_SIZE); index++) {
         var _cube$position;
 
         var position = this.positions[index];
-        var cube = this.initiateCube(index, position);
+        var cube = this.initiateCube(index, cubeSize);
 
         (_cube$position = cube.position).set.apply(_cube$position, _toConsumableArray(position));
 
@@ -41131,7 +41079,7 @@ var cubeVisual = /*#__PURE__*/function () {
   }, {
     key: "initiateCubesPositions",
     value: function initiateCubesPositions(cubeSize) {
-      var spacebetweenCubes = 0.1;
+      var spacebetweenCubes = 0.05;
       var cubesPositions = [];
       var mid = Math.floor(globals.ROW_SIZE / 2);
 
@@ -41143,7 +41091,6 @@ var cubeVisual = /*#__PURE__*/function () {
         }
       }
 
-      console.log(cubesPositions);
       return cubesPositions;
     }
   }, {
@@ -41168,47 +41115,63 @@ var cubeVisual = /*#__PURE__*/function () {
         if (position[z] === minPos) _this.faceToindex["front"][Math.floor(position[x]) + 1][Math.floor(position[y]) + 1] = index;
         if (position[z] === maxPos) _this.faceToindex["back"][Math.floor(position[x]) + 1][Math.floor(position[y]) + 1] = index;
       });
-      console.log(this.faceToindex);
+    }
+  }, {
+    key: "mapIndexToFace",
+    value: function mapIndexToFace() {
+      var _this2 = this;
+
+      var _this$positions$3 = _slicedToArray(this.positions[0], 1),
+          minPos = _this$positions$3[0];
+
+      var _this$positions$4 = _slicedToArray(this.positions[2], 1),
+          maxPos = _this$positions$4[0];
+
+      var x = 0;
+      var y = 1;
+      var z = 2;
+      this.positions.forEach(function (position, index) {
+        var faces = [];
+        if (position[x] === minPos) faces.push("left");
+        if (position[x] === maxPos) faces.push("right");
+        if (position[y] === minPos) faces.push("top");
+        if (position[y] === maxPos) faces.push("bottom");
+        if (position[z] === minPos) faces.push("front");
+        if (position[z] === maxPos) faces.push("back");
+        _this2.indexToFaces[index] = faces;
+      });
     }
   }, {
     key: "initiateCube",
-    value: function initiateCube(index, position) {
-      var DIMENTIONS = 1;
-      var Faces = ["right", "left", "top", "bottom", "front", "back"];
+    value: function initiateCube(index, cubeSize) {
+      var numOfFaces = 6;
+      var Faces = {
+        right: 0,
+        left: 1,
+        bottom: 2,
+        top: 3,
+        back: 4,
+        front: 5
+      };
       var defaultColor = new THREE.MeshPhongMaterial({
-        color: "black"
+        color: '#1e1e1f'
       });
-      var geometry = new THREE.BoxGeometry(1, 1, 1);
-      var material;
-      if (Math.floor(position[2]) === -1) material = new THREE.MeshPhongMaterial({
-        color: "green"
-      });else if (Math.floor(position[2]) === 0) material = new THREE.MeshPhongMaterial({
-        color: "blue"
-      });else material = new THREE.MeshPhongMaterial({
-        color: "white"
-      }); //[right, left, top, bottom, front, back]
+      var material = [];
 
+      _toConsumableArray(Array(numOfFaces)).forEach(function () {
+        return material.push(defaultColor);
+      });
+
+      var geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+      var visableFaces = this.indexToFaces[index];
+      visableFaces.forEach(function (face) {
+        material[Faces[face]] = new THREE.MeshPhongMaterial({
+          color: globals.COLORS[Faces[face]]
+        });
+      });
       var cube = new THREE.Mesh(geometry, material);
       return cube;
-    } // TO DO: might not use
-    // mapIndexToFace() {
-    //   const [minPos] = this.positions[0];
-    //   const [maxPos] = this.positions[2];
-    //   const x = 0;
-    //   const y = 1;
-    //   const z = 2;
-    //   this.positions.forEach((position, index) => {
-    //     let faces = [];
-    //     if (position[x] === minPos) faces.push("left");
-    //     if (position[x] === maxPos) faces.push("right");
-    //     if (position[y] === minPos) faces.push("top");
-    //     if (position[y] === maxPos) faces.push("bottom");
-    //     if (position[z] === minPos) faces.push("front");
-    //     if (position[z] === maxPos) faces.push("back");
-    //     this.indexToFaces[index] = faces;
-    //   });
-    // }
-
+    }
   }]);
 
   return cubeVisual;
@@ -41230,6 +41193,7 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 
 var logic = new _cubeLogic.cubeLogic();
 var view = new _cubeVisual.cubeVisual(logic);
+console.log(logic.getState());
 },{"./logic/cubeLogic":"logic/cubeLogic.js","./view/cubeVisual":"view/cubeVisual.js","./logic/globals":"logic/globals.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

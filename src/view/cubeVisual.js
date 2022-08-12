@@ -1,10 +1,7 @@
 import * as THREE from "three";
-import { Group } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import * as globals from "../logic/globals";
 
-// https://www.youtube.com/watch?v=xJAfLdUgdc4
-// https://github.com/filipw01/threejs-rubiks-cube/blob/master/RubiksCube.js
 export class cubeVisual {
   constructor(cubeLogic) {
     //scene managment
@@ -21,14 +18,13 @@ export class cubeVisual {
     //cube managment
     this.cubeLogic = cubeLogic;
     this.positions = [];
-    //this.indexToFaces = {};
-    this.faceToindex = { ...this.cubeLogic.getState() };
+    this.indexToFaces = {};
+    this.faceToindex = structuredClone(this.cubeLogic.getState());
 
     //start game
     this.initiateScene();
     this.animate();
     this.initiateRubiks();
-    this.mapFaceToIndex();
   }
 
   initiateScene() {
@@ -62,11 +58,14 @@ export class cubeVisual {
   initiateRubiks() {
     const cubeSize = 1;
     this.positions = this.initiateCubesPositions(cubeSize);
+    this.mapFaceToIndex();
+    this.mapIndexToFace();
+
     const group = new THREE.Group();
 
     for (let index = 0; index < globals.ROW_SIZE ** globals.ROW_SIZE; index++) {
       let position = this.positions[index];
-      let cube = this.initiateCube(index, position);
+      let cube = this.initiateCube(index, cubeSize);
       cube.position.set(...position);
       group.add(cube);
     }
@@ -75,7 +74,7 @@ export class cubeVisual {
   }
 
   initiateCubesPositions(cubeSize) {
-    const spacebetweenCubes = 0.1;
+    const spacebetweenCubes = 0.05;
     let cubesPositions = [];
     let mid = Math.floor(globals.ROW_SIZE / 2);
 
@@ -90,7 +89,6 @@ export class cubeVisual {
         }
       }
     }
-    console.log(cubesPositions);
     return cubesPositions;
   }
 
@@ -127,46 +125,46 @@ export class cubeVisual {
           Math.floor(position[y]) + 1
         ] = index;
     });
-    console.log(this.faceToindex);
   }
 
-  initiateCube(index, position) {
-    const DIMENTIONS = 1;
-    const Faces = ["right", "left", "top", "bottom", "front", "back"];
+  mapIndexToFace() {
+    const [minPos] = this.positions[0];
+    const [maxPos] = this.positions[2];
+    const x = 0;
+    const y = 1;
+    const z = 2;
+    this.positions.forEach((position, index) => {
+      let faces = [];
+      if (position[x] === minPos) faces.push("left");
+      if (position[x] === maxPos) faces.push("right");
+      if (position[y] === minPos) faces.push("top");
+      if (position[y] === maxPos) faces.push("bottom");
+      if (position[z] === minPos) faces.push("front");
+      if (position[z] === maxPos) faces.push("back");
 
-    const defaultColor = new THREE.MeshPhongMaterial({ color: "black" });
+      this.indexToFaces[index] = faces;
+    });
+  }
 
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    let material;
+  initiateCube(index, cubeSize) {
+    const numOfFaces = 6;
+    const Faces = { right: 0, left: 1, bottom: 2, top: 3, back: 4, front: 5 };
 
-    if (Math.floor(position[2]) === -1)
-      material = new THREE.MeshPhongMaterial({ color: "green" });
-    else if (Math.floor(position[2]) === 0)
-      material = new THREE.MeshPhongMaterial({ color: "blue" });
-    else material = new THREE.MeshPhongMaterial({ color: "white" });
-    //[right, left, top, bottom, front, back]
+    const defaultColor = new THREE.MeshPhongMaterial({ color: '#1e1e1f' });
+    let material = [];
+
+    [...Array(numOfFaces)].forEach(() => material.push(defaultColor));
+
+    const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+    const visableFaces = this.indexToFaces[index];
+    visableFaces.forEach((face) => {
+      material[Faces[face]] = new THREE.MeshPhongMaterial({
+        color: globals.COLORS[Faces[face]],
+      });
+    });
+
     const cube = new THREE.Mesh(geometry, material);
 
     return cube;
   }
-
-  // TO DO: might not use
-  // mapIndexToFace() {
-  //   const [minPos] = this.positions[0];
-  //   const [maxPos] = this.positions[2];
-  //   const x = 0;
-  //   const y = 1;
-  //   const z = 2;
-  //   this.positions.forEach((position, index) => {
-  //     let faces = [];
-  //     if (position[x] === minPos) faces.push("left");
-  //     if (position[x] === maxPos) faces.push("right");
-  //     if (position[y] === minPos) faces.push("top");
-  //     if (position[y] === maxPos) faces.push("bottom");
-  //     if (position[z] === minPos) faces.push("front");
-  //     if (position[z] === maxPos) faces.push("back");
-
-  //     this.indexToFaces[index] = faces;
-  //   });
-  // }
 }
