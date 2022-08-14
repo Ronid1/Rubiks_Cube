@@ -18,6 +18,8 @@ export class cubeVisual {
     //cube managment
     this.cubeLogic = cubeLogic;
     this.positions = [];
+    this.cubes = [];
+    this.makeingMove = false;
     this.indexToFaces = {};
     this.faceToindex = structuredClone(this.cubeLogic.getState());
 
@@ -61,16 +63,13 @@ export class cubeVisual {
     this.mapFaceToIndex();
     this.mapIndexToFace();
 
-    const group = new THREE.Group();
-
     for (let index = 0; index < globals.ROW_SIZE ** globals.ROW_SIZE; index++) {
       let position = this.positions[index];
       let cube = this.initiateCube(index, cubeSize);
       cube.position.set(...position);
-      group.add(cube);
+      this.scene.add(cube);
+      this.cubes.push(cube);
     }
-
-    this.scene.add(group);
   }
 
   initiateCubesPositions(cubeSize) {
@@ -101,29 +100,31 @@ export class cubeVisual {
 
     this.positions.forEach((position, index) => {
       if (position[x] === minPos)
-        this.faceToindex["left"][Math.floor(position[z]) + 1][
-          Math.floor(position[y]) + 1
+        this.faceToindex["left"][Math.abs(Math.floor(position[y]) - 1) % 3][
+          Math.floor(position[z]) + 1
         ] = index;
       if (position[x] === maxPos)
-        this.faceToindex["right"][Math.floor(position[z]) + 1][
-          Math.floor(position[y]) + 1
+        this.faceToindex["right"][Math.abs(Math.floor(position[y]) - 1)][
+          Math.abs(Math.floor(position[z]) - 1)
         ] = index;
       if (position[y] === minPos)
-        this.faceToindex["bottom"][Math.floor(position[z]) + 1][
+        this.faceToindex["bottom"][Math.abs(Math.floor(position[z]) - 1) % 3][
           Math.floor(position[x]) + 1
         ] = index;
-      if (position[y] === maxPos)
+      if (position[y] === maxPos) {
         this.faceToindex["top"][Math.floor(position[z]) + 1][
           Math.floor(position[x]) + 1
         ] = index;
+      }
       if (position[z] === minPos)
-        this.faceToindex["back"][Math.floor(position[x]) + 1][
-          Math.floor(position[y]) + 1
+        this.faceToindex["back"][Math.abs(Math.floor(position[y]) - 1) % 3][
+          Math.floor(position[x]) + 1
         ] = index;
-      if (position[z] === maxPos)
-        this.faceToindex["front"][Math.floor(position[x]) + 1][
-          Math.floor(position[y]) + 1
+      if (position[z] === maxPos) {
+        this.faceToindex["front"][Math.abs(Math.floor(position[y]) - 1) % 3][
+          Math.floor(position[x]) + 1
         ] = index;
+      }
     });
   }
 
@@ -164,7 +165,6 @@ export class cubeVisual {
     });
 
     const cube = new THREE.Mesh(geometry, material);
-
     return cube;
   }
 
@@ -183,5 +183,99 @@ export class cubeVisual {
     return this.cubeLogic.getState()[face][row][col];
   }
 
-  updateCube() {}
+  getCubeIndex(thisCubeId) {
+    let val;
+    this.cubes.forEach((cube, index) => {
+      if (cube.id === thisCubeId) val = index;
+    });
+    return val;
+  }
+
+  createLayer(axis, rowNum) {
+    const cubesInLayer = this.getCubeInLayer(axis, rowNum);
+    let layer = new THREE.Group();
+    cubesInLayer.forEach((index) => {
+      console.log(index);
+      layer.add(this.cubes[index]);
+    });
+    return layer;
+  }
+
+  getCubeInLayer(axis, rowNum) {
+    let cubesInLayer = new Set();
+    if (axis === "x") {
+      globals.PLAINS[axis].forEach((plain) => {
+        console.log(plain);
+        this.faceToindex[plain][rowNum].forEach((index) => {
+          cubesInLayer.add(index);
+        });
+      });
+    } else if (axis === "y") {
+      globals.PLAINS[axis].forEach((plain) => {
+        if (plain === "bottom") {
+          this.faceToindex[plain][rowNum].forEach((index) => {
+            cubesInLayer.add(index);
+          });
+        } else if (plain === "top") {
+          this.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(
+            (index) => {
+              cubesInLayer.add(index);
+            }
+          );
+        } else if (plain === "left") {
+          this.faceToindex[plain].forEach((row) => {
+            cubesInLayer.add(row[globals.ROW_SIZE - 1 - rowNum]);
+          });
+        } else {
+          this.faceToindex[plain].forEach((row) => {
+            cubesInLayer.add(row[rowNum]);
+          });
+        }
+      });
+    } else {
+      globals.PLAINS[axis].forEach((plain) => {
+        this.faceToindex[plain].forEach((row) => {
+          cubesInLayer.add(row[rowNum]);
+        });
+      });
+    }
+    return cubesInLayer;
+  }
+
+  getRowToRotate(cubeIndex, face, axis) {
+    // do I need a row or a col?
+
+    let rowNum;
+
+    this.faceToindex[face].forEach((row, index) => {
+      row.forEach((item) => {
+        if (item === cubeIndex) rowNum = index;
+      });
+    });
+
+    return rowNum;
+  }
+
+  rotate(axis, rowNum, direction) {
+    //update logic state
+    // this.cubeLogic.rotate(axis, rowNum, direction);
+
+    const layer = this.createLayer(axis, rowNum);
+    this.rotationAnimation(layer, axis, direction);
+  }
+
+  rotationAnimation(layer, axis, direction) {
+    if (this.makeingMove) return;
+
+    this.makeingMove = true;
+    let angle = 0;
+    if (direction === globals.DIRECTIONS.colckwise) angle = -90;
+    else angle = 90;
+    //spin action
+    if (axis === "x") layer.rotateX(angle);
+    else if (axis === "y") layer.rotateY(angle);
+    else layer.rotateX(angle);
+
+    this.makeingMove = false;
+  }
 }

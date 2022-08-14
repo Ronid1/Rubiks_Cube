@@ -41017,6 +41017,8 @@ var cubeVisual = /*#__PURE__*/function () {
 
     this.cubeLogic = cubeLogic;
     this.positions = [];
+    this.cubes = [];
+    this.makeingMove = false;
     this.indexToFaces = {};
     this.faceToindex = structuredClone(this.cubeLogic.getState()); //start game
 
@@ -41061,7 +41063,6 @@ var cubeVisual = /*#__PURE__*/function () {
       this.positions = this.initiateCubesPositions(cubeSize);
       this.mapFaceToIndex();
       this.mapIndexToFace();
-      var group = new THREE.Group();
 
       for (var index = 0; index < Math.pow(globals.ROW_SIZE, globals.ROW_SIZE); index++) {
         var _cube$position;
@@ -41071,10 +41072,9 @@ var cubeVisual = /*#__PURE__*/function () {
 
         (_cube$position = cube.position).set.apply(_cube$position, _toConsumableArray(position));
 
-        group.add(cube);
+        this.scene.add(cube);
+        this.cubes.push(cube);
       }
-
-      this.scene.add(group);
     }
   }, {
     key: "initiateCubesPositions",
@@ -41108,12 +41108,19 @@ var cubeVisual = /*#__PURE__*/function () {
       var y = 1;
       var z = 2;
       this.positions.forEach(function (position, index) {
-        if (position[x] === minPos) _this.faceToindex["left"][Math.floor(position[z]) + 1][Math.floor(position[y]) + 1] = index;
-        if (position[x] === maxPos) _this.faceToindex["right"][Math.floor(position[z]) + 1][Math.floor(position[y]) + 1] = index;
-        if (position[y] === minPos) _this.faceToindex["bottom"][Math.floor(position[z]) + 1][Math.floor(position[x]) + 1] = index;
-        if (position[y] === maxPos) _this.faceToindex["top"][Math.floor(position[z]) + 1][Math.floor(position[x]) + 1] = index;
-        if (position[z] === minPos) _this.faceToindex["back"][Math.floor(position[x]) + 1][Math.floor(position[y]) + 1] = index;
-        if (position[z] === maxPos) _this.faceToindex["front"][Math.floor(position[x]) + 1][Math.floor(position[y]) + 1] = index;
+        if (position[x] === minPos) _this.faceToindex["left"][Math.abs(Math.floor(position[y]) - 1) % 3][Math.floor(position[z]) + 1] = index;
+        if (position[x] === maxPos) _this.faceToindex["right"][Math.abs(Math.floor(position[y]) - 1)][Math.abs(Math.floor(position[z]) - 1)] = index;
+        if (position[y] === minPos) _this.faceToindex["bottom"][Math.abs(Math.floor(position[z]) - 1) % 3][Math.floor(position[x]) + 1] = index;
+
+        if (position[y] === maxPos) {
+          _this.faceToindex["top"][Math.floor(position[z]) + 1][Math.floor(position[x]) + 1] = index;
+        }
+
+        if (position[z] === minPos) _this.faceToindex["back"][Math.abs(Math.floor(position[y]) - 1) % 3][Math.floor(position[x]) + 1] = index;
+
+        if (position[z] === maxPos) {
+          _this.faceToindex["front"][Math.abs(Math.floor(position[y]) - 1) % 3][Math.floor(position[x]) + 1] = index;
+        }
       });
     }
   }, {
@@ -41192,20 +41199,258 @@ var cubeVisual = /*#__PURE__*/function () {
       return this.cubeLogic.getState()[face][row][col];
     }
   }, {
-    key: "updateCube",
-    value: function updateCube() {}
+    key: "getCubeIndex",
+    value: function getCubeIndex(thisCubeId) {
+      var val;
+      this.cubes.forEach(function (cube, index) {
+        if (cube.id === thisCubeId) val = index;
+      });
+      return val;
+    }
+  }, {
+    key: "createLayer",
+    value: function createLayer(axis, rowNum) {
+      var _this5 = this;
+
+      var cubesInLayer = this.getCubeInLayer(axis, rowNum);
+      var layer = new THREE.Group();
+      cubesInLayer.forEach(function (index) {
+        console.log(index);
+        layer.add(_this5.cubes[index]);
+      });
+      return layer;
+    }
+  }, {
+    key: "getCubeInLayer",
+    value: function getCubeInLayer(axis, rowNum) {
+      var _this6 = this;
+
+      var cubesInLayer = new Set();
+
+      if (axis === "x") {
+        globals.PLAINS[axis].forEach(function (plain) {
+          console.log(plain);
+
+          _this6.faceToindex[plain][rowNum].forEach(function (index) {
+            cubesInLayer.add(index);
+          });
+        });
+      } else if (axis === "y") {
+        globals.PLAINS[axis].forEach(function (plain) {
+          if (plain === "bottom") {
+            _this6.faceToindex[plain][rowNum].forEach(function (index) {
+              cubesInLayer.add(index);
+            });
+          } else if (plain === "top") {
+            _this6.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(function (index) {
+              cubesInLayer.add(index);
+            });
+          } else if (plain === "left") {
+            _this6.faceToindex[plain].forEach(function (row) {
+              cubesInLayer.add(row[globals.ROW_SIZE - 1 - rowNum]);
+            });
+          } else {
+            _this6.faceToindex[plain].forEach(function (row) {
+              cubesInLayer.add(row[rowNum]);
+            });
+          }
+        });
+      } else {
+        globals.PLAINS[axis].forEach(function (plain) {
+          _this6.faceToindex[plain].forEach(function (row) {
+            cubesInLayer.add(row[rowNum]);
+          });
+        });
+      }
+
+      return cubesInLayer;
+    }
+  }, {
+    key: "getRowToRotate",
+    value: function getRowToRotate(cubeIndex, face, axis) {
+      // do I need a row or a col?
+      var rowNum;
+      this.faceToindex[face].forEach(function (row, index) {
+        row.forEach(function (item) {
+          if (item === cubeIndex) rowNum = index;
+        });
+      });
+      return rowNum;
+    }
+  }, {
+    key: "rotate",
+    value: function rotate(axis, rowNum, direction) {
+      //update logic state
+      // this.cubeLogic.rotate(axis, rowNum, direction);
+      var layer = this.createLayer(axis, rowNum);
+      this.rotationAnimation(layer, axis, direction);
+    }
+  }, {
+    key: "rotationAnimation",
+    value: function rotationAnimation(layer, axis, direction) {
+      if (this.makeingMove) return;
+      this.makeingMove = true;
+      var angle = 0;
+      if (direction === globals.DIRECTIONS.colckwise) angle = -90;else angle = 90; //spin action
+
+      if (axis === "x") layer.rotateX(angle);else if (axis === "y") layer.rotateY(angle);else layer.rotateX(angle);
+      this.makeingMove = false;
+    }
   }]);
 
   return cubeVisual;
 }();
 
 exports.cubeVisual = cubeVisual;
-},{"three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls":"../node_modules/three/examples/jsm/controls/OrbitControls.js","../logic/globals":"logic/globals.js"}],"main.js":[function(require,module,exports) {
+},{"three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls":"../node_modules/three/examples/jsm/controls/OrbitControls.js","../logic/globals":"logic/globals.js"}],"view/eventContol.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.eventConstrol = void 0;
+
+var globals = _interopRequireWildcard(require("../logic/globals"));
+
+var THREE = _interopRequireWildcard(require("three"));
+
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var faces = {
+  0: "right",
+  1: "right",
+  2: "left",
+  3: "left",
+  4: "top",
+  5: "top",
+  6: "bottom",
+  7: "bottom",
+  8: "front",
+  9: "front",
+  10: "back",
+  11: "back"
+};
+
+var eventConstrol = /*#__PURE__*/function () {
+  function eventConstrol(logic, view) {
+    _classCallCheck(this, eventConstrol);
+
+    this.cubeLogic = logic;
+    this.cubeView = view;
+    this.makingMove = false;
+    this.cubeIndex = 0;
+    this.cubeFace = null;
+    this.raycaster = new THREE.Raycaster();
+    this.clickLocation = new THREE.Vector2();
+    this.initiateEvents();
+  }
+
+  _createClass(eventConstrol, [{
+    key: "initiateEvents",
+    value: function initiateEvents() {
+      var _this = this;
+
+      window.addEventListener("mousedown", function (e) {
+        return _this.onMouseDown(e);
+      });
+      window.addEventListener("mouseup", function (e) {
+        return _this.onMouseUp(e);
+      }, false);
+      window.addEventListener("mousemove", function () {
+        return _this.onMouseMove();
+      }, false);
+    }
+  }, {
+    key: "onMouseDown",
+    value: function onMouseDown(event) {
+      this.clickLocation.x = this.relativeXLocation(event.clientX);
+      this.clickLocation.y = this.relativeYLocation(event.clientY);
+      this.raycaster.setFromCamera(this.clickLocation, this.cubeView.camera);
+
+      var _this$raycaster$inter = this.raycaster.intersectObjects(this.cubeView.cubes, true),
+          _this$raycaster$inter2 = _slicedToArray(_this$raycaster$inter, 1),
+          intersect = _this$raycaster$inter2[0];
+
+      if (!intersect) return; //disaple cube movment
+
+      this.cubeView.controls.enable = false;
+      this.makingMove = true;
+      this.cubeIndex = this.cubeView.getCubeIndex(intersect.object.id);
+      console.log(this.cubeIndex);
+      this.cubeFace = faces[intersect.faceIndex];
+    }
+  }, {
+    key: "relativeXLocation",
+    value: function relativeXLocation(x) {
+      return x / window.innerWidth * 2 - 1;
+    }
+  }, {
+    key: "relativeYLocation",
+    value: function relativeYLocation(y) {
+      return -(y / window.innerHeight) * 2 + 1;
+    }
+  }, {
+    key: "onMouseUp",
+    value: function onMouseUp(event) {
+      this.cubeView.controls.enable = true;
+      if (!this.makingMove) return;
+      var x = this.relativeXLocation(event.clientX);
+      var y = this.relativeYLocation(event.clientY); // if dist < ?? don't make a move
+      //find direction by determining which box end point is closest too
+      // axis between start and end point
+      //axis (x,y,z)
+      // x is pernment
+      // y/z can change (up/down spin 360)
+      //calculate direction
+    }
+  }, {
+    key: "onMouseMove",
+    value: function onMouseMove(event) {}
+  }, {
+    key: "onDrage",
+    value: function onDrage(event) {
+      var axis, row, direction; //get direction
+      // ^^(relative to starting position => match state array order)
+      //update state
+
+      this.cubeLogic.rotate(axis, row, direction); //updadte view:
+      //animate rotation
+      //update colors
+    }
+  }]);
+
+  return eventConstrol;
+}();
+
+exports.eventConstrol = eventConstrol;
+},{"../logic/globals":"logic/globals.js","three":"../node_modules/three/build/three.module.js"}],"main.js":[function(require,module,exports) {
 "use strict";
 
 var _cubeLogic = require("./logic/cubeLogic");
 
 var _cubeVisual = require("./view/cubeVisual");
+
+var _eventContol = require("./view/eventContol");
 
 var globals = _interopRequireWildcard(require("./logic/globals"));
 
@@ -41213,10 +41458,16 @@ function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "functio
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-var logic = new _cubeLogic.cubeLogic(); //console.log(logic.getState())
-
+var logic = new _cubeLogic.cubeLogic();
+console.log(logic.getState());
 var view = new _cubeVisual.cubeVisual(logic);
-},{"./logic/cubeLogic":"logic/cubeLogic.js","./view/cubeVisual":"view/cubeVisual.js","./logic/globals":"logic/globals.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+console.log(view.indexToFaces);
+console.log(view.faceToindex);
+console.log(view.cubes); //logic.rotate('x', 1, globals.DIRECTIONS.colckwise)
+//view.rotate('y', 2, globals.DIRECTIONS.colckwise)
+
+var controls = new _eventContol.eventConstrol(logic, view);
+},{"./logic/cubeLogic":"logic/cubeLogic.js","./view/cubeVisual":"view/cubeVisual.js","./view/eventContol":"view/eventContol.js","./logic/globals":"logic/globals.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
