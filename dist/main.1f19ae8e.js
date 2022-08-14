@@ -41079,19 +41079,25 @@ var cubeVisual = /*#__PURE__*/function () {
   }, {
     key: "initiateCubesPositions",
     value: function initiateCubesPositions(cubeSize) {
-      var spacebetweenCubes = 0.05;
+      var spacebetweenCubes = 0.0; //0.05
+
       var cubesPositions = [];
-      var mid = Math.floor(globals.ROW_SIZE / 2);
+      var mid = Math.floor(globals.ROW_SIZE / 2) + spacebetweenCubes;
 
       for (var z = globals.ROW_SIZE - 1; z >= 0; z--) {
         for (var y = globals.ROW_SIZE - 1; y >= 0; y--) {
           for (var x = 0; x < globals.ROW_SIZE; x++) {
-            cubesPositions.push([x * (cubeSize + spacebetweenCubes) - mid, y * (cubeSize + spacebetweenCubes) - mid, z * (cubeSize + spacebetweenCubes) - mid]);
+            cubesPositions.push([this.twoDigits(x * (cubeSize + spacebetweenCubes) - mid), this.twoDigits(y * (cubeSize + spacebetweenCubes) - mid), this.twoDigits(z * (cubeSize + spacebetweenCubes) - mid)]);
           }
         }
       }
 
       return cubesPositions;
+    }
+  }, {
+    key: "twoDigits",
+    value: function twoDigits(num) {
+      return Math.round(num * 100) / 100;
     }
   }, {
     key: "mapFaceToIndex",
@@ -41107,6 +41113,7 @@ var cubeVisual = /*#__PURE__*/function () {
       var x = 0;
       var y = 1;
       var z = 2;
+      console.log(this.positions);
       this.positions.forEach(function (position, index) {
         if (position[x] === minPos) _this.faceToindex["left"][Math.abs(Math.floor(position[y]) - 1) % 3][Math.floor(position[z]) + 1] = index;
         if (position[x] === maxPos) _this.faceToindex["right"][Math.abs(Math.floor(position[y]) - 1)][Math.abs(Math.floor(position[z]) - 1)] = index;
@@ -41278,23 +41285,49 @@ var cubeVisual = /*#__PURE__*/function () {
       return rowNum;
     }
   }, {
+    key: "disassembleLayer",
+    value: function disassembleLayer(layer) {
+      var _this7 = this;
+
+      this.scene.remove(layer);
+      layer.forEach(function (box) {
+        _this7.scene.add(box);
+      });
+    }
+  }, {
     key: "rotate",
     value: function rotate(axis, rowNum, direction) {
-      //update logic state
-      // this.cubeLogic.rotate(axis, rowNum, direction);
       var layer = this.createLayer(axis, rowNum);
-      this.rotationAnimation(layer, axis, direction);
+      this.scene.add(layer); // update index to face / face to index
+
+      this.rotationAnimation(layer, axis, direction); //this.disassembleLayer(layer);
     }
   }, {
     key: "rotationAnimation",
     value: function rotationAnimation(layer, axis, direction) {
+      var DEGREE90 = 1.57;
+      var step = 0.01;
       if (this.makeingMove) return;
       this.makeingMove = true;
       var angle = 0;
-      if (direction === globals.DIRECTIONS.colckwise) angle = -90;else angle = 90; //spin action
+      if (direction === globals.DIRECTIONS.colckwise) angle = DEGREE90;else angle = -DEGREE90;
+      var time = 0;
+      var totalAngle = 0;
 
-      if (axis === "x") layer.rotateX(angle);else if (axis === "y") layer.rotateY(angle);else layer.rotateX(angle);
-      this.makeingMove = false;
+      function animateSpin(time) {
+        if (angle == DEGREE90 && totalAngle >= DEGREE90 || angle == -DEGREE90 && totalAngle >= 0) {
+          this.makeingMove = false;
+          return;
+        }
+
+        if (axis === "x") layer.rotateY(step);else if (axis === "y") layer.rotateZ(step);else layer.rotateX(step);
+        totalAngle += step;
+        requestAnimationFrame(function () {
+          return animateSpin(time);
+        });
+      }
+
+      animateSpin(time);
     }
   }]);
 
@@ -41416,27 +41449,19 @@ var eventConstrol = /*#__PURE__*/function () {
       if (!this.makingMove) return;
       var x = this.relativeXLocation(event.clientX);
       var y = this.relativeYLocation(event.clientY); // if dist < ?? don't make a move
-      //find direction by determining which box end point is closest too
+      //find direction by determining which box end point is closest to
       // axis between start and end point
       //axis (x,y,z)
       // x is pernment
       // y/z can change (up/down spin 360)
       //calculate direction
+      // update state and view
+      // this.cubeLogic.rotate(axis, rowNum, direction);
+      // this.cubeView.rotate(axis, rowNum, direction);
     }
   }, {
     key: "onMouseMove",
     value: function onMouseMove(event) {}
-  }, {
-    key: "onDrage",
-    value: function onDrage(event) {
-      var axis, row, direction; //get direction
-      // ^^(relative to starting position => match state array order)
-      //update state
-
-      this.cubeLogic.rotate(axis, row, direction); //updadte view:
-      //animate rotation
-      //update colors
-    }
   }]);
 
   return eventConstrol;
@@ -41463,10 +41488,13 @@ console.log(logic.getState());
 var view = new _cubeVisual.cubeVisual(logic);
 console.log(view.indexToFaces);
 console.log(view.faceToindex);
-console.log(view.cubes); //logic.rotate('x', 1, globals.DIRECTIONS.colckwise)
-//view.rotate('y', 2, globals.DIRECTIONS.colckwise)
+console.log(view.cubes);
+console.log(view.positions); //logic.rotate('x', 1, globals.DIRECTIONS.colckwise)
 
-var controls = new _eventContol.eventConstrol(logic, view);
+view.rotate('z', 2, globals.DIRECTIONS.colckwise); //view.rotate('x', 1, globals.DIRECTIONS.colckwise)
+
+var controls = new _eventContol.eventConstrol(logic, view); // shuffle button -> get sequence from logic, implement in view
+// solve button
 },{"./logic/cubeLogic":"logic/cubeLogic.js","./view/cubeVisual":"view/cubeVisual.js","./view/eventContol":"view/eventContol.js","./logic/globals":"logic/globals.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

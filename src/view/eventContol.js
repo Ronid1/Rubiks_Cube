@@ -72,27 +72,19 @@ export class eventConstrol {
 
     // if dist < ?? don't make a move
 
-    //find direction by determining which box end point is closest too
+    //find direction by determining which box end point is closest to
     // axis between start and end point
 
     //axis (x,y,z)
     // x is pernment
     // y/z can change (up/down spin 360)
     //calculate direction
+
+    // update state and view
+    // this.cubeLogic.rotate(axis, rowNum, direction);
+    // this.cubeView.rotate(axis, rowNum, direction);
   }
 
   onMouseMove(event) {}
 
-  onDrage(event) {
-    let axis, row, direction;
-
-    //get direction
-    // ^^(relative to starting position => match state array order)
-    //update state
-    this.cubeLogic.rotate(axis, row, direction);
-
-    //updadte view:
-    //animate rotation
-    //update colors
-  }
 }

@@ -9,6 +9,12 @@ const view = new cubeVisual(logic);
 console.log(view.indexToFaces)
 console.log(view.faceToindex)
 console.log(view.cubes)
+console.log(view.positions)
 //logic.rotate('x', 1, globals.DIRECTIONS.colckwise)
-//view.rotate('y', 2, globals.DIRECTIONS.colckwise)
+view.rotate('z', 2, globals.DIRECTIONS.colckwise)
+//view.rotate('x', 1, globals.DIRECTIONS.colckwise)
+
 const controls = new eventConstrol(logic, view)
+
+// shuffle button -> get sequence from logic, implement in view
+// solve button

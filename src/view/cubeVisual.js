@@ -73,22 +73,26 @@ export class cubeVisual {
   }
 
   initiateCubesPositions(cubeSize) {
-    const spacebetweenCubes = 0.05;
+    const spacebetweenCubes = 0.0; //0.05
     let cubesPositions = [];
-    let mid = Math.floor(globals.ROW_SIZE / 2);
+    let mid = Math.floor(globals.ROW_SIZE / 2) + spacebetweenCubes;
 
     for (let z = globals.ROW_SIZE - 1; z >= 0; z--) {
       for (let y = globals.ROW_SIZE - 1; y >= 0; y--) {
         for (let x = 0; x < globals.ROW_SIZE; x++) {
           cubesPositions.push([
-            x * (cubeSize + spacebetweenCubes) - mid,
-            y * (cubeSize + spacebetweenCubes) - mid,
-            z * (cubeSize + spacebetweenCubes) - mid,
+            this.twoDigits(x * (cubeSize + spacebetweenCubes) - mid),
+            this.twoDigits(y * (cubeSize + spacebetweenCubes) - mid),
+            this.twoDigits(z * (cubeSize + spacebetweenCubes) - mid),
           ]);
         }
       }
     }
     return cubesPositions;
+  }
+
+  twoDigits(num){
+    return Math.round(num * 100)/100
   }
 
   mapFaceToIndex() {
@@ -97,7 +101,7 @@ export class cubeVisual {
     const x = 0;
     const y = 1;
     const z = 2;
-
+    console.log(this.positions)
     this.positions.forEach((position, index) => {
       if (position[x] === minPos)
         this.faceToindex["left"][Math.abs(Math.floor(position[y]) - 1) % 3][
@@ -256,26 +260,49 @@ export class cubeVisual {
     return rowNum;
   }
 
-  rotate(axis, rowNum, direction) {
-    //update logic state
-    // this.cubeLogic.rotate(axis, rowNum, direction);
+  disassembleLayer(layer) {
+    this.scene.remove(layer);
 
+    layer.forEach((box) => {
+      this.scene.add(box);
+    });
+  }
+
+  rotate(axis, rowNum, direction) {
     const layer = this.createLayer(axis, rowNum);
+    this.scene.add(layer);
+    // update index to face / face to index
     this.rotationAnimation(layer, axis, direction);
+    //this.disassembleLayer(layer);
   }
 
   rotationAnimation(layer, axis, direction) {
+    const DEGREE90 = 1.57;
+    const step = 0.01;
     if (this.makeingMove) return;
 
     this.makeingMove = true;
     let angle = 0;
-    if (direction === globals.DIRECTIONS.colckwise) angle = -90;
-    else angle = 90;
-    //spin action
-    if (axis === "x") layer.rotateX(angle);
-    else if (axis === "y") layer.rotateY(angle);
-    else layer.rotateX(angle);
+    if (direction === globals.DIRECTIONS.colckwise) angle = DEGREE90;
+    else angle = -DEGREE90;
 
-    this.makeingMove = false;
+    let time = 0;
+    let totalAngle = 0;
+    function animateSpin(time) {
+      if (
+        (angle == DEGREE90 && totalAngle >= DEGREE90) ||
+        (angle == -DEGREE90 && totalAngle >= 0)
+      ) {
+        this.makeingMove = false;
+        return;
+      }
+      if (axis === "x") layer.rotateY(step);
+      else if (axis === "y") layer.rotateZ(step);
+      else layer.rotateX(step);
+      totalAngle += step;
+      requestAnimationFrame(() => animateSpin(time));
+    }
+
+    animateSpin(time);
   }
 }
