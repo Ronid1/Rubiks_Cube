@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import * as globals from "../logic/globals";
-import * as rotation from "../logic/rotationHelper";
 
 export class cubeVisual {
   constructor(cubeLogic) {
@@ -97,6 +96,29 @@ export class cubeVisual {
     return Math.round(num * 100) / 100;
   }
 
+  repaintRubiks() {
+    this.cubes.forEach((cube, index) => {
+      cube.material = this.paintCube(index);
+    });
+  }
+
+  paintCube(index) {
+    const numOfFaces = 6;
+    let material = [];
+    const Faces = { right: 0, left: 1, top: 2, bottom: 3, front: 4, back: 5 };
+    const defaultColor = new THREE.MeshPhongMaterial({ color: "#1e1e1f" });
+
+    [...Array(numOfFaces)].forEach(() => material.push(defaultColor));
+
+    const visableFaces = this.indexToFaces[index];
+    visableFaces.forEach((face) => {
+      material[Faces[face]] = new THREE.MeshPhongMaterial({
+        color: this.getCellsColor(face, index),
+      });
+    });
+    return material;
+  }
+
   mapFaceToIndex() {
     const [minPos] = this.positions[0];
     const [maxPos] = this.positions[2];
@@ -134,15 +156,6 @@ export class cubeVisual {
     });
   }
 
-  updateFaceToIndex(axis, rowNum, direction) {
-    this.faceToindex = rotation.rotate(
-      axis,
-      rowNum,
-      direction,
-      this.faceToindex
-    );
-  }
-
   mapIndexToFace() {
     const [minPos] = this.positions[0];
     const [maxPos] = this.positions[2];
@@ -163,23 +176,8 @@ export class cubeVisual {
   }
 
   initiateCube(index, cubeSize) {
-    const numOfFaces = 6;
-    const Faces = { right: 0, left: 1, top: 2, bottom: 3, front: 4, back: 5 };
-
-    const defaultColor = new THREE.MeshPhongMaterial({ color: "#1e1e1f" });
-    let material = [];
-
-    [...Array(numOfFaces)].forEach(() => material.push(defaultColor));
-
     const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-    const visableFaces = this.indexToFaces[index];
-    visableFaces.forEach((face) => {
-      material[Faces[face]] = new THREE.MeshPhongMaterial({
-        color: this.getCellsColor(face, index),
-      });
-    });
-
-    const cube = new THREE.Mesh(geometry, material);
+    const cube = new THREE.Mesh(geometry, this.paintCube(index));
     return cube;
   }
 
@@ -194,7 +192,6 @@ export class cubeVisual {
         }
       }
     });
-
     return this.cubeLogic.getState()[face][row][col];
   }
 
@@ -256,17 +253,8 @@ export class cubeVisual {
   }
 
   disassembleLayer(layer) {
-    console.log("after move:" ,layer.children);
-    //this.scene.remove(layer);
-    let position = new THREE.Vector3()
-
-    layer.children.forEach((child) => {
-      layer.remove(child)
-      // console.log(...child.position);
-      // child.getWorldPosition(position)
-      // child.position.set(position)
-      this.scene.add(child);
-    });
+    this.scene.add(...layer.children);
+    layer.remove(...layer.children);
   }
 
   rotate(axis, rowNum, direction) {
@@ -279,11 +267,11 @@ export class cubeVisual {
     const layer = this.createLayer(axis, rowNum);
     this.scene.add(layer);
 
-    // TO DO: update index to face && face to index
-    this.updateFaceToIndex(axis, rowNum, direction);
+    //this.updateFaceToIndex(axis, rowNum, direction);
     this.rotationAnimation(layer, axis, direction).then(() => {
       this.makeingMove = false;
-      //this.disassembleLayer(layer);
+      this.disassembleLayer(layer);
+      this.repaintRubiks();
       const next = this.moveQueue.shift();
       if (next) this.rotate(next.axis, next.rowNum, next.direction);
     });
@@ -299,7 +287,7 @@ export class cubeVisual {
     }
 
     if (axis === "z") {
-      angle = -DEGREE90;
+      angle = -angle;
       step = -step;
     }
 
@@ -316,7 +304,7 @@ export class cubeVisual {
         if (axis === "x") layer.rotateY(step);
         else if (axis === "y") layer.rotateZ(step);
         else layer.rotateX(step);
-        totalAngle += step;
+        totalAngle = totalAngle + step;
         requestAnimationFrame(() => animateSpin(time));
       }
       animateSpin(time);

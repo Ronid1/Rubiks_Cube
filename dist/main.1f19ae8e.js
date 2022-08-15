@@ -154,173 +154,7 @@ var CHAIN_REACTION = {
 exports.CHAIN_REACTION = CHAIN_REACTION;
 var COLORS = ["red", "#e8651a", "yellow", "white", "green", "blue"];
 exports.COLORS = COLORS;
-},{}],"logic/rotationHelper.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.rotate = rotate;
-exports.rotateFace = rotateFace;
-exports.rotateX = rotateX;
-exports.rotateY = rotateY;
-exports.rotateZ = rotateZ;
-
-var globals = _interopRequireWildcard(require("./globals"));
-
-function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
-
-function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-
-function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
-
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
-
-function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function rotate(axis, rowNum, direction, state) {
-  var _globals$PLAINS$axis = _slicedToArray(globals.PLAINS[axis], 1),
-      firstFace = _globals$PLAINS$axis[0];
-
-  var circularPlane = [].concat(_toConsumableArray(globals.PLAINS[axis]), [firstFace]);
-  var updatedState = [];
-  if (direction === globals.DIRECTIONS.counterClockwise) circularPlane.reverse();
-  if (axis === "x") updatedState = rotateX(circularPlane, rowNum, state);else if (axis === "y") updatedState = rotateY(circularPlane, rowNum, state);else updatedState = rotateY(circularPlane, rowNum, state); //rotating row 0 or 2 will cause corresponding face to spin
-
-  if (rowNum === 0 || rowNum === globals.ROW_SIZE - 1) updatedState = rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction, updatedState);
-  return updatedState;
-}
-
-function rotateX(circularPlane, rowNum, cubeState) {
-  var _circularPlane = _slicedToArray(circularPlane, 1),
-      firstFace = _circularPlane[0];
-
-  var copyFirstRow = cubeState[firstFace][rowNum];
-  circularPlane.forEach(function (face, index) {
-    if (face === firstFace && index > 0) return;
-    var nextFace = circularPlane[index + 1];
-    if (nextFace === firstFace) cubeState[face][rowNum] = copyFirstRow;else cubeState[face][rowNum] = cubeState[nextFace][rowNum];
-  });
-  return cubeState;
-}
-
-function rotateY(circularPlane, rowNum, cubeState) {
-  circularPlane = circularPlane.reverse();
-
-  var _circularPlane2 = circularPlane,
-      _circularPlane3 = _slicedToArray(_circularPlane2, 1),
-      firstFace = _circularPlane3[0];
-
-  var reverseIndex = globals.ROW_SIZE - 1 - rowNum;
-  var copyBottom = cubeState["bottom"][reverseIndex];
-  var copyTop = cubeState["top"][rowNum];
-  var copyRight = cubeState["right"].map(function (row) {
-    return row[reverseIndex];
-  });
-  var copyLeft = cubeState["left"].map(function (row) {
-    return row[rowNum];
-  });
-  circularPlane.forEach(function (face, index) {
-    if (face === firstFace && index > 0) return;
-
-    if (face === "bottom") {
-      if (circularPlane[index + 1] === "left") cubeState[face][rowNum] = copyLeft.reverse();else cubeState[face][rowNum] = copyRight.reverse();
-    } else if (face === "top") {
-      if (circularPlane[index + 1] === "left") cubeState[face][rowNum] = copyLeft.reverse();else cubeState[face][rowNum] = copyRight.reverse();
-    } else if (face === "left") {
-      if (circularPlane[index + 1] === "top") {
-        cubeState[face].forEach(function (row, i) {
-          cubeState[face][i][rowNum] = copyTop[i];
-        });
-      } else {
-        console.log(copyBottom);
-        cubeState[face].forEach(function (row, i) {
-          cubeState[face][i][rowNum] = copyBottom[i];
-        });
-      }
-    } else {
-      if (circularPlane[index + 1] === "top") {
-        cubeState[face].forEach(function (row, i) {
-          cubeState[face][i][reverseIndex] = copyTop[i];
-        });
-      } else {
-        cubeState[face].forEach(function (row, i) {
-          cubeState[face][i][reverseIndex] = copyBottom[i];
-        });
-      }
-    }
-  });
-  return cubeState;
-}
-
-function rotateZ(circularPlane, colNum, cubeState) {
-  var _circularPlane4 = _slicedToArray(circularPlane, 1),
-      firstFace = _circularPlane4[0];
-
-  var copyFirstcol = cubeState[firstFace].map(function (row) {
-    return row[colNum];
-  });
-  circularPlane.forEach(function (face, index) {
-    _toConsumableArray(Array(globals.ROW_SIZE)).forEach(function () {
-      if (face === firstFace && index > 0) return;
-      var nextFace = circularPlane[index + 1];
-      if (nextFace === firstFace) cubeState[face].map(function (row, i) {
-        row[colNum] = copyFirstcol[i];
-      });else cubeState[face].map(function (row, i) {
-        row[colNum] = cubeState[nextFace][i][colNum];
-      });
-    });
-  });
-  return cubeState;
-}
-
-function rotateFace(face, direction, cubeState) {
-  var faceCopy = cubeState[face].map(function (arr) {
-    return arr.slice();
-  }); //row0 = ex_col0, row1 = ex_col1, row2 = ex_col2
-
-  if (direction === globals.DIRECTIONS.colckwise) {
-    var _loop = function _loop(index) {
-      var colCopy = faceCopy.map(function (row) {
-        return row[index];
-      });
-      cubeState[face][index] = colCopy;
-    };
-
-    for (var index = 0; index < globals.ROW_SIZE; index++) {
-      _loop(index);
-    }
-  } //row0 = ex_col2, row1 = ex_col1, row2 = ex_col0
-  else {
-    var _loop2 = function _loop2(_index) {
-      var colCopy = faceCopy.map(function (row) {
-        return row[_index];
-      });
-      cubeState[face][Math.abs(_index - globals.ROW_SIZE)] = colCopy;
-    };
-
-    for (var _index = globals.ROW_SIZE; _index >= 0; _index--) {
-      _loop2(_index);
-    }
-  }
-
-  return cubeState;
-}
-},{"./globals":"logic/globals.js"}],"logic/cubeLogic.js":[function(require,module,exports) {
+},{}],"logic/cubeLogic.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -330,11 +164,17 @@ exports.cubeLogic = void 0;
 
 var globals = _interopRequireWildcard(require("./globals"));
 
-var rotation = _interopRequireWildcard(require("./rotationHelper"));
-
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
@@ -401,26 +241,155 @@ var cubeLogic = /*#__PURE__*/function () {
   }, {
     key: "rotate",
     value: function rotate(axis, rowNum, direction) {
-      this.cubeState = rotation.rotate(axis, rowNum, direction, this.cubeState);
+      var _globals$PLAINS$axis = _slicedToArray(globals.PLAINS[axis], 1),
+          firstFace = _globals$PLAINS$axis[0];
+
+      var circularPlane = [].concat(_toConsumableArray(globals.PLAINS[axis]), [firstFace]);
+      if (direction === globals.DIRECTIONS.counterClockwise) circularPlane.reverse();
+      if (axis === "x") this.rotateX(circularPlane, rowNum);else if (axis === "y") this.rotateY(circularPlane, rowNum);else this.rotateZ(circularPlane, rowNum); //rotating row 0 or 2 will cause corresponding face to spin
+
+      if (rowNum === 0 || rowNum === globals.ROW_SIZE - 1) this.rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction);
+    }
+  }, {
+    key: "rotateX",
+    value: function rotateX(circularPlane, rowNum) {
+      var _this2 = this;
+
+      var _circularPlane = _slicedToArray(circularPlane, 1),
+          firstFace = _circularPlane[0];
+
+      var copyFirstRow = this.cubeState[firstFace][rowNum];
+      circularPlane.forEach(function (face, index) {
+        if (face === firstFace && index > 0) return;
+        var nextFace = circularPlane[index + 1];
+        if (nextFace === firstFace) _this2.cubeState[face][rowNum] = copyFirstRow;else _this2.cubeState[face][rowNum] = _this2.cubeState[nextFace][rowNum];
+      });
+    }
+  }, {
+    key: "rotateY",
+    value: function rotateY(circularPlane, rowNum) {
+      var _this3 = this;
+
+      circularPlane = circularPlane.reverse();
+
+      var _circularPlane2 = circularPlane,
+          _circularPlane3 = _slicedToArray(_circularPlane2, 1),
+          firstFace = _circularPlane3[0];
+
+      var reverseIndex = globals.ROW_SIZE - 1 - rowNum;
+      var copyBottom = this.cubeState["bottom"][reverseIndex];
+      var copyTop = this.cubeState["top"][rowNum];
+      var copyRight = this.cubeState["right"].map(function (row) {
+        return row[reverseIndex];
+      });
+      var copyLeft = this.cubeState["left"].map(function (row) {
+        return row[rowNum];
+      });
+      circularPlane.forEach(function (face, index) {
+        if (face === firstFace && index > 0) return;
+
+        if (face === "bottom") {
+          if (circularPlane[index + 1] === "left") _this3.cubeState[face][reverseIndex] = copyLeft.reverse();else _this3.cubeState[face][reverseIndex] = copyRight.reverse();
+        } else if (face === "top") {
+          if (circularPlane[index + 1] === "left") _this3.cubeState[face][rowNum] = copyLeft.reverse();else _this3.cubeState[face][rowNum] = copyRight.reverse();
+        } else if (face === "left") {
+          if (circularPlane[index + 1] === "top") {
+            _this3.cubeState[face].forEach(function (row, i) {
+              _this3.cubeState[face][i][rowNum] = copyTop[i];
+            });
+          } else {
+            _this3.cubeState[face].forEach(function (row, i) {
+              _this3.cubeState[face][i][rowNum] = copyBottom[i];
+            });
+          }
+        } else {
+          if (circularPlane[index + 1] === "top") {
+            _this3.cubeState[face].forEach(function (row, i) {
+              _this3.cubeState[face][i][reverseIndex] = copyTop[i];
+            });
+          } else {
+            _this3.cubeState[face].forEach(function (row, i) {
+              _this3.cubeState[face][i][reverseIndex] = copyBottom[i];
+            });
+          }
+        }
+      });
+    }
+  }, {
+    key: "rotateZ",
+    value: function rotateZ(circularPlane, colNum) {
+      var _this4 = this;
+
+      var _circularPlane4 = _slicedToArray(circularPlane, 1),
+          firstFace = _circularPlane4[0];
+
+      var copyFirstcol = this.cubeState[firstFace].map(function (row) {
+        return row[colNum];
+      });
+      circularPlane.forEach(function (face, index) {
+        _toConsumableArray(Array(globals.ROW_SIZE)).forEach(function () {
+          if (face === firstFace && index > 0) return;
+          var nextFace = circularPlane[index + 1];
+          if (nextFace === firstFace) _this4.cubeState[face].map(function (row, i) {
+            row[colNum] = copyFirstcol[i];
+          });else _this4.cubeState[face].map(function (row, i) {
+            row[colNum] = _this4.cubeState[nextFace][i][colNum];
+          });
+        });
+      });
+    }
+  }, {
+    key: "rotateFace",
+    value: function rotateFace(face, direction) {
+      var _this5 = this;
+
+      var faceCopy = this.cubeState[face].map(function (arr) {
+        return arr.slice();
+      }); //row0 = ex_col0, row1 = ex_col1, row2 = ex_col2
+
+      if (direction === globals.DIRECTIONS.colckwise) {
+        var _loop2 = function _loop2(index) {
+          var colCopy = faceCopy.map(function (row) {
+            return row[index];
+          });
+          _this5.cubeState[face][index] = colCopy;
+        };
+
+        for (var index = 0; index < globals.ROW_SIZE; index++) {
+          _loop2(index);
+        }
+      } //row0 = ex_col2, row1 = ex_col1, row2 = ex_col0
+      else {
+        var _loop3 = function _loop3(_index) {
+          var colCopy = faceCopy.map(function (row) {
+            return row[_index];
+          });
+          _this5.cubeState[face][Math.abs(_index - globals.ROW_SIZE)] = colCopy;
+        };
+
+        for (var _index = globals.ROW_SIZE - 1; _index >= 0; _index--) {
+          _loop3(_index);
+        }
+      }
     }
   }, {
     key: "shuffle",
     value: function shuffle() {
-      var _this2 = this;
+      var _this6 = this;
 
       var axes = ["x", "y", "z"];
       var numOfRotates = this.random(31, 16);
 
       _toConsumableArray(Array(numOfRotates)).forEach(function () {
-        var axis = axes[_this2.random(3)];
+        var axis = axes[_this6.random(3)];
 
-        var row = _this2.random(globals.ROW_SIZE);
+        var row = _this6.random(globals.ROW_SIZE);
 
-        var direction = Object.keys(globals.DIRECTIONS)[_this2.random(2)];
+        var direction = Object.keys(globals.DIRECTIONS)[_this6.random(2)];
 
         console.log("axis: ".concat(axis, ", row: ").concat(row, ", direction: ").concat(direction));
 
-        _this2.rotate(axis, row, direction);
+        _this6.rotate(axis, row, direction);
       });
     }
   }, {
@@ -435,7 +404,7 @@ var cubeLogic = /*#__PURE__*/function () {
 }();
 
 exports.cubeLogic = cubeLogic;
-},{"./globals":"logic/globals.js","./rotationHelper":"logic/rotationHelper.js"}],"../node_modules/three/build/three.module.js":[function(require,module,exports) {
+},{"./globals":"logic/globals.js"}],"../node_modules/three/build/three.module.js":[function(require,module,exports) {
 var define;
 "use strict";
 
@@ -41056,8 +41025,6 @@ var _OrbitControls = require("three/examples/jsm/controls/OrbitControls");
 
 var globals = _interopRequireWildcard(require("../logic/globals"));
 
-var rotation = _interopRequireWildcard(require("../logic/rotationHelper"));
-
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
@@ -41191,9 +41158,49 @@ var cubeVisual = /*#__PURE__*/function () {
       return Math.round(num * 100) / 100;
     }
   }, {
+    key: "repaintRubiks",
+    value: function repaintRubiks() {
+      var _this = this;
+
+      this.cubes.forEach(function (cube, index) {
+        cube.material = _this.paintCube(index);
+      });
+    }
+  }, {
+    key: "paintCube",
+    value: function paintCube(index) {
+      var _this2 = this;
+
+      var numOfFaces = 6;
+      var material = [];
+      var Faces = {
+        right: 0,
+        left: 1,
+        top: 2,
+        bottom: 3,
+        front: 4,
+        back: 5
+      };
+      var defaultColor = new THREE.MeshPhongMaterial({
+        color: "#1e1e1f"
+      });
+
+      _toConsumableArray(Array(numOfFaces)).forEach(function () {
+        return material.push(defaultColor);
+      });
+
+      var visableFaces = this.indexToFaces[index];
+      visableFaces.forEach(function (face) {
+        material[Faces[face]] = new THREE.MeshPhongMaterial({
+          color: _this2.getCellsColor(face, index)
+        });
+      });
+      return material;
+    }
+  }, {
     key: "mapFaceToIndex",
     value: function mapFaceToIndex() {
-      var _this = this;
+      var _this3 = this;
 
       var _this$positions$ = _slicedToArray(this.positions[0], 1),
           minPos = _this$positions$[0];
@@ -41205,30 +41212,25 @@ var cubeVisual = /*#__PURE__*/function () {
       var y = 1;
       var z = 2;
       this.positions.forEach(function (position, index) {
-        if (position[x] === minPos) _this.faceToindex["left"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[z]) + 1] = index;
-        if (position[x] === maxPos) _this.faceToindex["right"][Math.abs(Math.round(position[y]) - 1)][Math.abs(Math.round(position[z]) - 1)] = index;
-        if (position[y] === minPos) _this.faceToindex["bottom"][Math.abs(Math.round(position[z]) - 1) % 3][Math.round(position[x]) + 1] = index;
+        if (position[x] === minPos) _this3.faceToindex["left"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[z]) + 1] = index;
+        if (position[x] === maxPos) _this3.faceToindex["right"][Math.abs(Math.round(position[y]) - 1)][Math.abs(Math.round(position[z]) - 1)] = index;
+        if (position[y] === minPos) _this3.faceToindex["bottom"][Math.abs(Math.round(position[z]) - 1) % 3][Math.round(position[x]) + 1] = index;
 
         if (position[y] === maxPos) {
-          _this.faceToindex["top"][Math.round(position[z]) + 1][Math.round(position[x]) + 1] = index;
+          _this3.faceToindex["top"][Math.round(position[z]) + 1][Math.round(position[x]) + 1] = index;
         }
 
-        if (position[z] === minPos) _this.faceToindex["back"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[x]) + 1] = index;
+        if (position[z] === minPos) _this3.faceToindex["back"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[x]) + 1] = index;
 
         if (position[z] === maxPos) {
-          _this.faceToindex["front"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[x]) + 1] = index;
+          _this3.faceToindex["front"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[x]) + 1] = index;
         }
       });
     }
   }, {
-    key: "updateFaceToIndex",
-    value: function updateFaceToIndex(axis, rowNum, direction) {
-      this.faceToindex = rotation.rotate(axis, rowNum, direction, this.faceToindex);
-    }
-  }, {
     key: "mapIndexToFace",
     value: function mapIndexToFace() {
-      var _this2 = this;
+      var _this4 = this;
 
       var _this$positions$3 = _slicedToArray(this.positions[0], 1),
           minPos = _this$positions$3[0];
@@ -41247,51 +41249,25 @@ var cubeVisual = /*#__PURE__*/function () {
         if (position[y] === maxPos) faces.push("top");
         if (position[z] === minPos) faces.push("back");
         if (position[z] === maxPos) faces.push("front");
-        _this2.indexToFaces[index] = faces;
+        _this4.indexToFaces[index] = faces;
       });
     }
   }, {
     key: "initiateCube",
     value: function initiateCube(index, cubeSize) {
-      var _this3 = this;
-
-      var numOfFaces = 6;
-      var Faces = {
-        right: 0,
-        left: 1,
-        top: 2,
-        bottom: 3,
-        front: 4,
-        back: 5
-      };
-      var defaultColor = new THREE.MeshPhongMaterial({
-        color: "#1e1e1f"
-      });
-      var material = [];
-
-      _toConsumableArray(Array(numOfFaces)).forEach(function () {
-        return material.push(defaultColor);
-      });
-
       var geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-      var visableFaces = this.indexToFaces[index];
-      visableFaces.forEach(function (face) {
-        material[Faces[face]] = new THREE.MeshPhongMaterial({
-          color: _this3.getCellsColor(face, index)
-        });
-      });
-      var cube = new THREE.Mesh(geometry, material);
+      var cube = new THREE.Mesh(geometry, this.paintCube(index));
       return cube;
     }
   }, {
     key: "getCellsColor",
     value: function getCellsColor(face, cubeIndex) {
-      var _this4 = this;
+      var _this5 = this;
 
       var row, col;
       this.faceToindex[face].forEach(function (val, r) {
-        for (var i = 0; i < _this4.faceToindex[face].length; i++) {
-          if (_this4.faceToindex[face][r][i] === cubeIndex) {
+        for (var i = 0; i < _this5.faceToindex[face].length; i++) {
+          if (_this5.faceToindex[face][r][i] === cubeIndex) {
             row = r;
             col = i;
             break;
@@ -41312,51 +41288,51 @@ var cubeVisual = /*#__PURE__*/function () {
   }, {
     key: "createLayer",
     value: function createLayer(axis, rowNum) {
-      var _this5 = this;
+      var _this6 = this;
 
       var cubesInLayer = this.getCubeInLayer(axis, rowNum);
       var layer = new THREE.Group();
       cubesInLayer.forEach(function (index) {
-        layer.add(_this5.cubes[index]);
+        layer.add(_this6.cubes[index]);
       });
       return layer;
     }
   }, {
     key: "getCubeInLayer",
     value: function getCubeInLayer(axis, rowNum) {
-      var _this6 = this;
+      var _this7 = this;
 
       var cubesInLayer = new Set();
 
       if (axis === "x") {
         globals.PLAINS[axis].forEach(function (plain) {
-          _this6.faceToindex[plain][rowNum].forEach(function (index) {
+          _this7.faceToindex[plain][rowNum].forEach(function (index) {
             cubesInLayer.add(index);
           });
         });
       } else if (axis === "y") {
         globals.PLAINS[axis].forEach(function (plain) {
           if (plain === "bottom") {
-            _this6.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(function (index) {
+            _this7.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(function (index) {
               cubesInLayer.add(index);
             });
           } else if (plain === "top") {
-            _this6.faceToindex[plain][rowNum].forEach(function (index) {
+            _this7.faceToindex[plain][rowNum].forEach(function (index) {
               cubesInLayer.add(index);
             });
           } else if (plain === "left") {
-            _this6.faceToindex[plain].forEach(function (row) {
+            _this7.faceToindex[plain].forEach(function (row) {
               cubesInLayer.add(row[rowNum]);
             });
           } else {
-            _this6.faceToindex[plain].forEach(function (row) {
+            _this7.faceToindex[plain].forEach(function (row) {
               cubesInLayer.add(row[globals.ROW_SIZE - 1 - rowNum]);
             });
           }
         });
       } else {
         globals.PLAINS[axis].forEach(function (plain) {
-          _this6.faceToindex[plain].forEach(function (row) {
+          _this7.faceToindex[plain].forEach(function (row) {
             cubesInLayer.add(row[rowNum]);
           });
         });
@@ -41367,18 +41343,11 @@ var cubeVisual = /*#__PURE__*/function () {
   }, {
     key: "disassembleLayer",
     value: function disassembleLayer(layer) {
-      var _this7 = this;
+      var _this$scene;
 
-      console.log("after move:", layer.children); //this.scene.remove(layer);
+      (_this$scene = this.scene).add.apply(_this$scene, _toConsumableArray(layer.children));
 
-      var position = new THREE.Vector3();
-      layer.children.forEach(function (child) {
-        layer.remove(child); // console.log(...child.position);
-        // child.getWorldPosition(position)
-        // child.position.set(position)
-
-        _this7.scene.add(child);
-      });
+      layer.remove.apply(layer, _toConsumableArray(layer.children));
     }
   }, {
     key: "rotate",
@@ -41397,11 +41366,14 @@ var cubeVisual = /*#__PURE__*/function () {
 
       this.makeingMove = true;
       var layer = this.createLayer(axis, rowNum);
-      this.scene.add(layer); // TO DO: update index to face && face to index
+      this.scene.add(layer); //this.updateFaceToIndex(axis, rowNum, direction);
 
-      this.updateFaceToIndex(axis, rowNum, direction);
       this.rotationAnimation(layer, axis, direction).then(function () {
-        _this8.makeingMove = false; //this.disassembleLayer(layer);
+        _this8.makeingMove = false;
+
+        _this8.disassembleLayer(layer);
+
+        _this8.repaintRubiks();
 
         var next = _this8.moveQueue.shift();
 
@@ -41427,7 +41399,7 @@ var cubeVisual = /*#__PURE__*/function () {
                 }
 
                 if (axis === "z") {
-                  angle = -DEGREE90;
+                  angle = -angle;
                   step = -step;
                 }
 
@@ -41440,7 +41412,7 @@ var cubeVisual = /*#__PURE__*/function () {
                     }
 
                     if (axis === "x") layer.rotateY(step);else if (axis === "y") layer.rotateZ(step);else layer.rotateX(step);
-                    totalAngle += step;
+                    totalAngle = totalAngle + step;
                     requestAnimationFrame(function () {
                       return animateSpin(time);
                     });
@@ -41469,7 +41441,7 @@ var cubeVisual = /*#__PURE__*/function () {
 }();
 
 exports.cubeVisual = cubeVisual;
-},{"three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls":"../node_modules/three/examples/jsm/controls/OrbitControls.js","../logic/globals":"logic/globals.js","../logic/rotationHelper":"logic/rotationHelper.js"}],"view/eventContol.js":[function(require,module,exports) {
+},{"three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls":"../node_modules/three/examples/jsm/controls/OrbitControls.js","../logic/globals":"logic/globals.js"}],"view/eventContol.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -41621,11 +41593,11 @@ var logic = new _cubeLogic.cubeLogic();
 console.log(logic.getState());
 var view = new _cubeVisual.cubeVisual(logic);
 console.log(view.indexToFaces);
-console.log(view.faceToindex); //update y spinning (like visual rotation)
-//logic.rotate('y', 0, globals.DIRECTIONS.colckwise)
-
-view.rotate('x', 1, globals.DIRECTIONS.colckwise);
-view.rotate('y', 0, globals.DIRECTIONS.colckwise); //console.log(view.faceToindex)
+console.log(view.faceToindex);
+logic.rotate('x', 2, globals.DIRECTIONS.counterClockwise);
+view.rotate('x', 2, globals.DIRECTIONS.colcounterClockwiseckwise); //logic.rotate('z', 2, globals.DIRECTIONS.colckwise)
+//view.rotate('z', 2, globals.DIRECTIONS.colckwise)
+//console.log(view.faceToindex)
 // view.rotate('z', 1, globals.DIRECTIONS.counterClockwise)
 
 var controls = new _eventContol.eventConstrol(logic, view); // shuffle button -> get sequence from logic, implement in view
