@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import * as globals from "../logic/globals";
+import * as rotation from "../logic/rotationHelper";
 
 export class cubeVisual {
   constructor(cubeLogic) {
@@ -19,6 +20,7 @@ export class cubeVisual {
     this.cubeLogic = cubeLogic;
     this.positions = [];
     this.cubes = [];
+    this.moveQueue = [];
     this.makeingMove = false;
     this.indexToFaces = {};
     this.faceToindex = structuredClone(this.cubeLogic.getState());
@@ -73,7 +75,7 @@ export class cubeVisual {
   }
 
   initiateCubesPositions(cubeSize) {
-    const spacebetweenCubes = 0.0; //0.05
+    const spacebetweenCubes = 0.05;
     let cubesPositions = [];
     let mid = Math.floor(globals.ROW_SIZE / 2) + spacebetweenCubes;
 
@@ -91,8 +93,8 @@ export class cubeVisual {
     return cubesPositions;
   }
 
-  twoDigits(num){
-    return Math.round(num * 100)/100
+  twoDigits(num) {
+    return Math.round(num * 100) / 100;
   }
 
   mapFaceToIndex() {
@@ -101,35 +103,44 @@ export class cubeVisual {
     const x = 0;
     const y = 1;
     const z = 2;
-    console.log(this.positions)
+
     this.positions.forEach((position, index) => {
       if (position[x] === minPos)
-        this.faceToindex["left"][Math.abs(Math.floor(position[y]) - 1) % 3][
-          Math.floor(position[z]) + 1
+        this.faceToindex["left"][Math.abs(Math.round(position[y]) - 1) % 3][
+          Math.round(position[z]) + 1
         ] = index;
       if (position[x] === maxPos)
-        this.faceToindex["right"][Math.abs(Math.floor(position[y]) - 1)][
-          Math.abs(Math.floor(position[z]) - 1)
+        this.faceToindex["right"][Math.abs(Math.round(position[y]) - 1)][
+          Math.abs(Math.round(position[z]) - 1)
         ] = index;
       if (position[y] === minPos)
-        this.faceToindex["bottom"][Math.abs(Math.floor(position[z]) - 1) % 3][
-          Math.floor(position[x]) + 1
+        this.faceToindex["bottom"][Math.abs(Math.round(position[z]) - 1) % 3][
+          Math.round(position[x]) + 1
         ] = index;
       if (position[y] === maxPos) {
-        this.faceToindex["top"][Math.floor(position[z]) + 1][
-          Math.floor(position[x]) + 1
+        this.faceToindex["top"][Math.round(position[z]) + 1][
+          Math.round(position[x]) + 1
         ] = index;
       }
       if (position[z] === minPos)
-        this.faceToindex["back"][Math.abs(Math.floor(position[y]) - 1) % 3][
-          Math.floor(position[x]) + 1
+        this.faceToindex["back"][Math.abs(Math.round(position[y]) - 1) % 3][
+          Math.round(position[x]) + 1
         ] = index;
       if (position[z] === maxPos) {
-        this.faceToindex["front"][Math.abs(Math.floor(position[y]) - 1) % 3][
-          Math.floor(position[x]) + 1
+        this.faceToindex["front"][Math.abs(Math.round(position[y]) - 1) % 3][
+          Math.round(position[x]) + 1
         ] = index;
       }
     });
+  }
+
+  updateFaceToIndex(axis, rowNum, direction) {
+    this.faceToindex = rotation.rotate(
+      axis,
+      rowNum,
+      direction,
+      this.faceToindex
+    );
   }
 
   mapIndexToFace() {
@@ -199,7 +210,6 @@ export class cubeVisual {
     const cubesInLayer = this.getCubeInLayer(axis, rowNum);
     let layer = new THREE.Group();
     cubesInLayer.forEach((index) => {
-      console.log(index);
       layer.add(this.cubes[index]);
     });
     return layer;
@@ -209,7 +219,6 @@ export class cubeVisual {
     let cubesInLayer = new Set();
     if (axis === "x") {
       globals.PLAINS[axis].forEach((plain) => {
-        console.log(plain);
         this.faceToindex[plain][rowNum].forEach((index) => {
           cubesInLayer.add(index);
         });
@@ -217,22 +226,22 @@ export class cubeVisual {
     } else if (axis === "y") {
       globals.PLAINS[axis].forEach((plain) => {
         if (plain === "bottom") {
-          this.faceToindex[plain][rowNum].forEach((index) => {
-            cubesInLayer.add(index);
-          });
-        } else if (plain === "top") {
           this.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(
             (index) => {
               cubesInLayer.add(index);
             }
           );
+        } else if (plain === "top") {
+          this.faceToindex[plain][rowNum].forEach((index) => {
+            cubesInLayer.add(index);
+          });
         } else if (plain === "left") {
           this.faceToindex[plain].forEach((row) => {
-            cubesInLayer.add(row[globals.ROW_SIZE - 1 - rowNum]);
+            cubesInLayer.add(row[rowNum]);
           });
         } else {
           this.faceToindex[plain].forEach((row) => {
-            cubesInLayer.add(row[rowNum]);
+            cubesInLayer.add(row[globals.ROW_SIZE - 1 - rowNum]);
           });
         }
       });
@@ -246,63 +255,71 @@ export class cubeVisual {
     return cubesInLayer;
   }
 
-  getRowToRotate(cubeIndex, face, axis) {
-    // do I need a row or a col?
-
-    let rowNum;
-
-    this.faceToindex[face].forEach((row, index) => {
-      row.forEach((item) => {
-        if (item === cubeIndex) rowNum = index;
-      });
-    });
-
-    return rowNum;
-  }
-
   disassembleLayer(layer) {
-    this.scene.remove(layer);
+    console.log("after move:" ,layer.children);
+    //this.scene.remove(layer);
+    let position = new THREE.Vector3()
 
-    layer.forEach((box) => {
-      this.scene.add(box);
+    layer.children.forEach((child) => {
+      layer.remove(child)
+      // console.log(...child.position);
+      // child.getWorldPosition(position)
+      // child.position.set(position)
+      this.scene.add(child);
     });
   }
 
   rotate(axis, rowNum, direction) {
+    // create queue for pending moves
+    if (this.makeingMove) {
+      this.moveQueue.push({ axis, rowNum, direction });
+      return;
+    }
+    this.makeingMove = true;
     const layer = this.createLayer(axis, rowNum);
     this.scene.add(layer);
-    // update index to face / face to index
-    this.rotationAnimation(layer, axis, direction);
-    //this.disassembleLayer(layer);
+
+    // TO DO: update index to face && face to index
+    this.updateFaceToIndex(axis, rowNum, direction);
+    this.rotationAnimation(layer, axis, direction).then(() => {
+      this.makeingMove = false;
+      //this.disassembleLayer(layer);
+      const next = this.moveQueue.shift();
+      if (next) this.rotate(next.axis, next.rowNum, next.direction);
+    });
   }
 
-  rotationAnimation(layer, axis, direction) {
+  async rotationAnimation(layer, axis, direction) {
     const DEGREE90 = 1.57;
-    const step = 0.01;
-    if (this.makeingMove) return;
+    let step = 0.02;
+    let angle = DEGREE90;
+    if (direction === globals.DIRECTIONS.colckwise) {
+      angle = -DEGREE90;
+      step = -step;
+    }
 
-    this.makeingMove = true;
-    let angle = 0;
-    if (direction === globals.DIRECTIONS.colckwise) angle = DEGREE90;
-    else angle = -DEGREE90;
+    if (axis === "z") {
+      angle = -DEGREE90;
+      step = -step;
+    }
 
     let time = 0;
     let totalAngle = 0;
-    function animateSpin(time) {
-      if (
-        (angle == DEGREE90 && totalAngle >= DEGREE90) ||
-        (angle == -DEGREE90 && totalAngle >= 0)
-      ) {
-        this.makeingMove = false;
-        return;
+    return new Promise((resolve) => {
+      function animateSpin(time) {
+        if (
+          (angle == DEGREE90 && totalAngle >= angle) ||
+          (angle == -DEGREE90 && totalAngle <= angle)
+        ) {
+          return resolve();
+        }
+        if (axis === "x") layer.rotateY(step);
+        else if (axis === "y") layer.rotateZ(step);
+        else layer.rotateX(step);
+        totalAngle += step;
+        requestAnimationFrame(() => animateSpin(time));
       }
-      if (axis === "x") layer.rotateY(step);
-      else if (axis === "y") layer.rotateZ(step);
-      else layer.rotateX(step);
-      totalAngle += step;
-      requestAnimationFrame(() => animateSpin(time));
-    }
-
-    animateSpin(time);
+      animateSpin(time);
+    });
   }
 }

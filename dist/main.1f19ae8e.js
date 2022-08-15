@@ -136,7 +136,7 @@ var DIRECTIONS = {
 exports.DIRECTIONS = DIRECTIONS;
 var PLAINS = {
   x: ['front', 'right', 'back', 'left'],
-  y: ['right', 'top', 'left', 'bottom'],
+  y: ['right', 'bottom', 'left', 'top'],
   z: ['front', 'top', 'back', 'bottom']
 };
 exports.PLAINS = PLAINS;
@@ -154,7 +154,173 @@ var CHAIN_REACTION = {
 exports.CHAIN_REACTION = CHAIN_REACTION;
 var COLORS = ["red", "#e8651a", "yellow", "white", "green", "blue"];
 exports.COLORS = COLORS;
-},{}],"logic/cubeLogic.js":[function(require,module,exports) {
+},{}],"logic/rotationHelper.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.rotate = rotate;
+exports.rotateFace = rotateFace;
+exports.rotateX = rotateX;
+exports.rotateY = rotateY;
+exports.rotateZ = rotateZ;
+
+var globals = _interopRequireWildcard(require("./globals"));
+
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function rotate(axis, rowNum, direction, state) {
+  var _globals$PLAINS$axis = _slicedToArray(globals.PLAINS[axis], 1),
+      firstFace = _globals$PLAINS$axis[0];
+
+  var circularPlane = [].concat(_toConsumableArray(globals.PLAINS[axis]), [firstFace]);
+  var updatedState = [];
+  if (direction === globals.DIRECTIONS.counterClockwise) circularPlane.reverse();
+  if (axis === "x") updatedState = rotateX(circularPlane, rowNum, state);else if (axis === "y") updatedState = rotateY(circularPlane, rowNum, state);else updatedState = rotateY(circularPlane, rowNum, state); //rotating row 0 or 2 will cause corresponding face to spin
+
+  if (rowNum === 0 || rowNum === globals.ROW_SIZE - 1) updatedState = rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction, updatedState);
+  return updatedState;
+}
+
+function rotateX(circularPlane, rowNum, cubeState) {
+  var _circularPlane = _slicedToArray(circularPlane, 1),
+      firstFace = _circularPlane[0];
+
+  var copyFirstRow = cubeState[firstFace][rowNum];
+  circularPlane.forEach(function (face, index) {
+    if (face === firstFace && index > 0) return;
+    var nextFace = circularPlane[index + 1];
+    if (nextFace === firstFace) cubeState[face][rowNum] = copyFirstRow;else cubeState[face][rowNum] = cubeState[nextFace][rowNum];
+  });
+  return cubeState;
+}
+
+function rotateY(circularPlane, rowNum, cubeState) {
+  circularPlane = circularPlane.reverse();
+
+  var _circularPlane2 = circularPlane,
+      _circularPlane3 = _slicedToArray(_circularPlane2, 1),
+      firstFace = _circularPlane3[0];
+
+  var reverseIndex = globals.ROW_SIZE - 1 - rowNum;
+  var copyBottom = cubeState["bottom"][reverseIndex];
+  var copyTop = cubeState["top"][rowNum];
+  var copyRight = cubeState["right"].map(function (row) {
+    return row[reverseIndex];
+  });
+  var copyLeft = cubeState["left"].map(function (row) {
+    return row[rowNum];
+  });
+  circularPlane.forEach(function (face, index) {
+    if (face === firstFace && index > 0) return;
+
+    if (face === "bottom") {
+      if (circularPlane[index + 1] === "left") cubeState[face][rowNum] = copyLeft.reverse();else cubeState[face][rowNum] = copyRight.reverse();
+    } else if (face === "top") {
+      if (circularPlane[index + 1] === "left") cubeState[face][rowNum] = copyLeft.reverse();else cubeState[face][rowNum] = copyRight.reverse();
+    } else if (face === "left") {
+      if (circularPlane[index + 1] === "top") {
+        cubeState[face].forEach(function (row, i) {
+          cubeState[face][i][rowNum] = copyTop[i];
+        });
+      } else {
+        console.log(copyBottom);
+        cubeState[face].forEach(function (row, i) {
+          cubeState[face][i][rowNum] = copyBottom[i];
+        });
+      }
+    } else {
+      if (circularPlane[index + 1] === "top") {
+        cubeState[face].forEach(function (row, i) {
+          cubeState[face][i][reverseIndex] = copyTop[i];
+        });
+      } else {
+        cubeState[face].forEach(function (row, i) {
+          cubeState[face][i][reverseIndex] = copyBottom[i];
+        });
+      }
+    }
+  });
+  return cubeState;
+}
+
+function rotateZ(circularPlane, colNum, cubeState) {
+  var _circularPlane4 = _slicedToArray(circularPlane, 1),
+      firstFace = _circularPlane4[0];
+
+  var copyFirstcol = cubeState[firstFace].map(function (row) {
+    return row[colNum];
+  });
+  circularPlane.forEach(function (face, index) {
+    _toConsumableArray(Array(globals.ROW_SIZE)).forEach(function () {
+      if (face === firstFace && index > 0) return;
+      var nextFace = circularPlane[index + 1];
+      if (nextFace === firstFace) cubeState[face].map(function (row, i) {
+        row[colNum] = copyFirstcol[i];
+      });else cubeState[face].map(function (row, i) {
+        row[colNum] = cubeState[nextFace][i][colNum];
+      });
+    });
+  });
+  return cubeState;
+}
+
+function rotateFace(face, direction, cubeState) {
+  var faceCopy = cubeState[face].map(function (arr) {
+    return arr.slice();
+  }); //row0 = ex_col0, row1 = ex_col1, row2 = ex_col2
+
+  if (direction === globals.DIRECTIONS.colckwise) {
+    var _loop = function _loop(index) {
+      var colCopy = faceCopy.map(function (row) {
+        return row[index];
+      });
+      cubeState[face][index] = colCopy;
+    };
+
+    for (var index = 0; index < globals.ROW_SIZE; index++) {
+      _loop(index);
+    }
+  } //row0 = ex_col2, row1 = ex_col1, row2 = ex_col0
+  else {
+    var _loop2 = function _loop2(_index) {
+      var colCopy = faceCopy.map(function (row) {
+        return row[_index];
+      });
+      cubeState[face][Math.abs(_index - globals.ROW_SIZE)] = colCopy;
+    };
+
+    for (var _index = globals.ROW_SIZE; _index >= 0; _index--) {
+      _loop2(_index);
+    }
+  }
+
+  return cubeState;
+}
+},{"./globals":"logic/globals.js"}],"logic/cubeLogic.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -164,17 +330,11 @@ exports.cubeLogic = void 0;
 
 var globals = _interopRequireWildcard(require("./globals"));
 
+var rotation = _interopRequireWildcard(require("./rotationHelper"));
+
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
-
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-
-function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
@@ -241,105 +401,26 @@ var cubeLogic = /*#__PURE__*/function () {
   }, {
     key: "rotate",
     value: function rotate(axis, rowNum, direction) {
-      var _globals$PLAINS$axis = _slicedToArray(globals.PLAINS[axis], 1),
-          firstFace = _globals$PLAINS$axis[0];
-
-      var circularPlane = [].concat(_toConsumableArray(globals.PLAINS[axis]), [firstFace]);
-      if (direction === globals.DIRECTIONS.counterClockwise) circularPlane.reverse();
-      if (axis === "x") this.rotateX(circularPlane, rowNum);else this.rotateYZ(circularPlane, rowNum); //rotating row 0 or 2 will cause corresponding face to spin
-
-      if (rowNum === 0 || rowNum === globals.ROW_SIZE - 1) this.rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction);
-    }
-  }, {
-    key: "rotateX",
-    value: function rotateX(circularPlane, rowNum) {
-      var _this2 = this;
-
-      var _circularPlane = _slicedToArray(circularPlane, 1),
-          firstFace = _circularPlane[0];
-
-      var copyFirstRow = this.cubeState[firstFace][rowNum];
-      circularPlane.forEach(function (face, index) {
-        if (face === firstFace && index > 0) return;
-        var nextFace = circularPlane[index + 1];
-        if (nextFace === firstFace) _this2.cubeState[face][rowNum] = copyFirstRow;else _this2.cubeState[face][rowNum] = _this2.cubeState[nextFace][rowNum];
-      });
-    }
-  }, {
-    key: "rotateYZ",
-    value: function rotateYZ(circularPlane, colNum) {
-      var _this3 = this;
-
-      var _circularPlane2 = _slicedToArray(circularPlane, 1),
-          firstFace = _circularPlane2[0];
-
-      var copyFirstcol = this.cubeState[firstFace].map(function (row) {
-        return row[colNum];
-      });
-      circularPlane.forEach(function (face, index) {
-        _toConsumableArray(Array(globals.ROW_SIZE)).forEach(function () {
-          if (face === firstFace && index > 0) return;
-          var nextFace = circularPlane[index + 1];
-          if (nextFace === firstFace) _this3.cubeState[face].map(function (row, i) {
-            row[colNum] = copyFirstcol[i];
-          });else _this3.cubeState[face].map(function (row, i) {
-            row[colNum] = _this3.cubeState[nextFace][i][colNum];
-          });
-        });
-      });
-    }
-  }, {
-    key: "rotateFace",
-    value: function rotateFace(face, direction) {
-      var _this4 = this;
-
-      var faceCopy = this.cubeState[face].map(function (arr) {
-        return arr.slice();
-      }); //row0 = ex_col0, row1 = ex_col1, row2 = ex_col2
-
-      if (direction === globals.DIRECTIONS.colckwise) {
-        var _loop2 = function _loop2(index) {
-          var colCopy = faceCopy.map(function (row) {
-            return row[index];
-          });
-          _this4.cubeState[face][index] = colCopy;
-        };
-
-        for (var index = 0; index < globals.ROW_SIZE; index++) {
-          _loop2(index);
-        }
-      } //row0 = ex_col2, row1 = ex_col1, row2 = ex_col0
-      else {
-        var _loop3 = function _loop3(_index) {
-          var colCopy = faceCopy.map(function (row) {
-            return row[_index];
-          });
-          _this4.cubeState[face][Math.abs(_index - globals.ROW_SIZE)] = colCopy;
-        };
-
-        for (var _index = globals.ROW_SIZE; _index >= 0; _index--) {
-          _loop3(_index);
-        }
-      }
+      this.cubeState = rotation.rotate(axis, rowNum, direction, this.cubeState);
     }
   }, {
     key: "shuffle",
     value: function shuffle() {
-      var _this5 = this;
+      var _this2 = this;
 
       var axes = ["x", "y", "z"];
       var numOfRotates = this.random(31, 16);
 
       _toConsumableArray(Array(numOfRotates)).forEach(function () {
-        var axis = axes[_this5.random(3)];
+        var axis = axes[_this2.random(3)];
 
-        var row = _this5.random(globals.ROW_SIZE);
+        var row = _this2.random(globals.ROW_SIZE);
 
-        var direction = Object.keys(globals.DIRECTIONS)[_this5.random(2)];
+        var direction = Object.keys(globals.DIRECTIONS)[_this2.random(2)];
 
         console.log("axis: ".concat(axis, ", row: ").concat(row, ", direction: ").concat(direction));
 
-        _this5.rotate(axis, row, direction);
+        _this2.rotate(axis, row, direction);
       });
     }
   }, {
@@ -354,7 +435,7 @@ var cubeLogic = /*#__PURE__*/function () {
 }();
 
 exports.cubeLogic = cubeLogic;
-},{"./globals":"logic/globals.js"}],"../node_modules/three/build/three.module.js":[function(require,module,exports) {
+},{"./globals":"logic/globals.js","./rotationHelper":"logic/rotationHelper.js"}],"../node_modules/three/build/three.module.js":[function(require,module,exports) {
 var define;
 "use strict";
 
@@ -40975,9 +41056,19 @@ var _OrbitControls = require("three/examples/jsm/controls/OrbitControls");
 
 var globals = _interopRequireWildcard(require("../logic/globals"));
 
+var rotation = _interopRequireWildcard(require("../logic/rotationHelper"));
+
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return generator._invoke = function (innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; }(innerFn, self, context), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; this._invoke = function (method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); }; } function maybeInvokeDelegate(delegate, context) { var method = delegate.iterator[context.method]; if (undefined === method) { if (context.delegate = null, "throw" === context.method) { if (delegate.iterator.return && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method)) return ContinueSentinel; context.method = "throw", context.arg = new TypeError("The iterator does not provide a 'throw' method"); } return ContinueSentinel; } var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, define(Gp, "constructor", GeneratorFunctionPrototype), define(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (object) { var keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, catch: function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
@@ -41018,6 +41109,7 @@ var cubeVisual = /*#__PURE__*/function () {
     this.cubeLogic = cubeLogic;
     this.positions = [];
     this.cubes = [];
+    this.moveQueue = [];
     this.makeingMove = false;
     this.indexToFaces = {};
     this.faceToindex = structuredClone(this.cubeLogic.getState()); //start game
@@ -41079,8 +41171,7 @@ var cubeVisual = /*#__PURE__*/function () {
   }, {
     key: "initiateCubesPositions",
     value: function initiateCubesPositions(cubeSize) {
-      var spacebetweenCubes = 0.0; //0.05
-
+      var spacebetweenCubes = 0.05;
       var cubesPositions = [];
       var mid = Math.floor(globals.ROW_SIZE / 2) + spacebetweenCubes;
 
@@ -41113,22 +41204,26 @@ var cubeVisual = /*#__PURE__*/function () {
       var x = 0;
       var y = 1;
       var z = 2;
-      console.log(this.positions);
       this.positions.forEach(function (position, index) {
-        if (position[x] === minPos) _this.faceToindex["left"][Math.abs(Math.floor(position[y]) - 1) % 3][Math.floor(position[z]) + 1] = index;
-        if (position[x] === maxPos) _this.faceToindex["right"][Math.abs(Math.floor(position[y]) - 1)][Math.abs(Math.floor(position[z]) - 1)] = index;
-        if (position[y] === minPos) _this.faceToindex["bottom"][Math.abs(Math.floor(position[z]) - 1) % 3][Math.floor(position[x]) + 1] = index;
+        if (position[x] === minPos) _this.faceToindex["left"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[z]) + 1] = index;
+        if (position[x] === maxPos) _this.faceToindex["right"][Math.abs(Math.round(position[y]) - 1)][Math.abs(Math.round(position[z]) - 1)] = index;
+        if (position[y] === minPos) _this.faceToindex["bottom"][Math.abs(Math.round(position[z]) - 1) % 3][Math.round(position[x]) + 1] = index;
 
         if (position[y] === maxPos) {
-          _this.faceToindex["top"][Math.floor(position[z]) + 1][Math.floor(position[x]) + 1] = index;
+          _this.faceToindex["top"][Math.round(position[z]) + 1][Math.round(position[x]) + 1] = index;
         }
 
-        if (position[z] === minPos) _this.faceToindex["back"][Math.abs(Math.floor(position[y]) - 1) % 3][Math.floor(position[x]) + 1] = index;
+        if (position[z] === minPos) _this.faceToindex["back"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[x]) + 1] = index;
 
         if (position[z] === maxPos) {
-          _this.faceToindex["front"][Math.abs(Math.floor(position[y]) - 1) % 3][Math.floor(position[x]) + 1] = index;
+          _this.faceToindex["front"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[x]) + 1] = index;
         }
       });
+    }
+  }, {
+    key: "updateFaceToIndex",
+    value: function updateFaceToIndex(axis, rowNum, direction) {
+      this.faceToindex = rotation.rotate(axis, rowNum, direction, this.faceToindex);
     }
   }, {
     key: "mapIndexToFace",
@@ -41222,7 +41317,6 @@ var cubeVisual = /*#__PURE__*/function () {
       var cubesInLayer = this.getCubeInLayer(axis, rowNum);
       var layer = new THREE.Group();
       cubesInLayer.forEach(function (index) {
-        console.log(index);
         layer.add(_this5.cubes[index]);
       });
       return layer;
@@ -41236,8 +41330,6 @@ var cubeVisual = /*#__PURE__*/function () {
 
       if (axis === "x") {
         globals.PLAINS[axis].forEach(function (plain) {
-          console.log(plain);
-
           _this6.faceToindex[plain][rowNum].forEach(function (index) {
             cubesInLayer.add(index);
           });
@@ -41245,20 +41337,20 @@ var cubeVisual = /*#__PURE__*/function () {
       } else if (axis === "y") {
         globals.PLAINS[axis].forEach(function (plain) {
           if (plain === "bottom") {
-            _this6.faceToindex[plain][rowNum].forEach(function (index) {
+            _this6.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(function (index) {
               cubesInLayer.add(index);
             });
           } else if (plain === "top") {
-            _this6.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(function (index) {
+            _this6.faceToindex[plain][rowNum].forEach(function (index) {
               cubesInLayer.add(index);
             });
           } else if (plain === "left") {
             _this6.faceToindex[plain].forEach(function (row) {
-              cubesInLayer.add(row[globals.ROW_SIZE - 1 - rowNum]);
+              cubesInLayer.add(row[rowNum]);
             });
           } else {
             _this6.faceToindex[plain].forEach(function (row) {
-              cubesInLayer.add(row[rowNum]);
+              cubesInLayer.add(row[globals.ROW_SIZE - 1 - rowNum]);
             });
           }
         });
@@ -41273,69 +41365,111 @@ var cubeVisual = /*#__PURE__*/function () {
       return cubesInLayer;
     }
   }, {
-    key: "getRowToRotate",
-    value: function getRowToRotate(cubeIndex, face, axis) {
-      // do I need a row or a col?
-      var rowNum;
-      this.faceToindex[face].forEach(function (row, index) {
-        row.forEach(function (item) {
-          if (item === cubeIndex) rowNum = index;
-        });
-      });
-      return rowNum;
-    }
-  }, {
     key: "disassembleLayer",
     value: function disassembleLayer(layer) {
       var _this7 = this;
 
-      this.scene.remove(layer);
-      layer.forEach(function (box) {
-        _this7.scene.add(box);
+      console.log("after move:", layer.children); //this.scene.remove(layer);
+
+      var position = new THREE.Vector3();
+      layer.children.forEach(function (child) {
+        layer.remove(child); // console.log(...child.position);
+        // child.getWorldPosition(position)
+        // child.position.set(position)
+
+        _this7.scene.add(child);
       });
     }
   }, {
     key: "rotate",
     value: function rotate(axis, rowNum, direction) {
-      var layer = this.createLayer(axis, rowNum);
-      this.scene.add(layer); // update index to face / face to index
+      var _this8 = this;
 
-      this.rotationAnimation(layer, axis, direction); //this.disassembleLayer(layer);
+      // create queue for pending moves
+      if (this.makeingMove) {
+        this.moveQueue.push({
+          axis: axis,
+          rowNum: rowNum,
+          direction: direction
+        });
+        return;
+      }
+
+      this.makeingMove = true;
+      var layer = this.createLayer(axis, rowNum);
+      this.scene.add(layer); // TO DO: update index to face && face to index
+
+      this.updateFaceToIndex(axis, rowNum, direction);
+      this.rotationAnimation(layer, axis, direction).then(function () {
+        _this8.makeingMove = false; //this.disassembleLayer(layer);
+
+        var next = _this8.moveQueue.shift();
+
+        if (next) _this8.rotate(next.axis, next.rowNum, next.direction);
+      });
     }
   }, {
     key: "rotationAnimation",
-    value: function rotationAnimation(layer, axis, direction) {
-      var DEGREE90 = 1.57;
-      var step = 0.01;
-      if (this.makeingMove) return;
-      this.makeingMove = true;
-      var angle = 0;
-      if (direction === globals.DIRECTIONS.colckwise) angle = DEGREE90;else angle = -DEGREE90;
-      var time = 0;
-      var totalAngle = 0;
+    value: function () {
+      var _rotationAnimation = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(layer, axis, direction) {
+        var DEGREE90, step, angle, time, totalAngle;
+        return _regeneratorRuntime().wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                DEGREE90 = 1.57;
+                step = 0.02;
+                angle = DEGREE90;
 
-      function animateSpin(time) {
-        if (angle == DEGREE90 && totalAngle >= DEGREE90 || angle == -DEGREE90 && totalAngle >= 0) {
-          this.makeingMove = false;
-          return;
-        }
+                if (direction === globals.DIRECTIONS.colckwise) {
+                  angle = -DEGREE90;
+                  step = -step;
+                }
 
-        if (axis === "x") layer.rotateY(step);else if (axis === "y") layer.rotateZ(step);else layer.rotateX(step);
-        totalAngle += step;
-        requestAnimationFrame(function () {
-          return animateSpin(time);
-        });
+                if (axis === "z") {
+                  angle = -DEGREE90;
+                  step = -step;
+                }
+
+                time = 0;
+                totalAngle = 0;
+                return _context.abrupt("return", new Promise(function (resolve) {
+                  function animateSpin(time) {
+                    if (angle == DEGREE90 && totalAngle >= angle || angle == -DEGREE90 && totalAngle <= angle) {
+                      return resolve();
+                    }
+
+                    if (axis === "x") layer.rotateY(step);else if (axis === "y") layer.rotateZ(step);else layer.rotateX(step);
+                    totalAngle += step;
+                    requestAnimationFrame(function () {
+                      return animateSpin(time);
+                    });
+                  }
+
+                  animateSpin(time);
+                }));
+
+              case 8:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+
+      function rotationAnimation(_x, _x2, _x3) {
+        return _rotationAnimation.apply(this, arguments);
       }
 
-      animateSpin(time);
-    }
+      return rotationAnimation;
+    }()
   }]);
 
   return cubeVisual;
 }();
 
 exports.cubeVisual = cubeVisual;
-},{"three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls":"../node_modules/three/examples/jsm/controls/OrbitControls.js","../logic/globals":"logic/globals.js"}],"view/eventContol.js":[function(require,module,exports) {
+},{"three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls":"../node_modules/three/examples/jsm/controls/OrbitControls.js","../logic/globals":"logic/globals.js","../logic/rotationHelper":"logic/rotationHelper.js"}],"view/eventContol.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -41487,11 +41621,12 @@ var logic = new _cubeLogic.cubeLogic();
 console.log(logic.getState());
 var view = new _cubeVisual.cubeVisual(logic);
 console.log(view.indexToFaces);
-console.log(view.faceToindex);
-console.log(view.cubes);
-console.log(view.positions); //logic.rotate('x', 1, globals.DIRECTIONS.colckwise)
+console.log(view.faceToindex); //update y spinning (like visual rotation)
+//logic.rotate('y', 0, globals.DIRECTIONS.colckwise)
 
-view.rotate('z', 2, globals.DIRECTIONS.colckwise); //view.rotate('x', 1, globals.DIRECTIONS.colckwise)
+view.rotate('x', 1, globals.DIRECTIONS.colckwise);
+view.rotate('y', 0, globals.DIRECTIONS.colckwise); //console.log(view.faceToindex)
+// view.rotate('z', 1, globals.DIRECTIONS.counterClockwise)
 
 var controls = new _eventContol.eventConstrol(logic, view); // shuffle button -> get sequence from logic, implement in view
 // solve button
@@ -41523,7 +41658,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55768" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52995" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

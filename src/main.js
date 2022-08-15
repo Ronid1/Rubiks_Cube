@@ -8,11 +8,12 @@ console.log(logic.getState())
 const view = new cubeVisual(logic);
 console.log(view.indexToFaces)
 console.log(view.faceToindex)
-console.log(view.cubes)
-console.log(view.positions)
-//logic.rotate('x', 1, globals.DIRECTIONS.colckwise)
-view.rotate('z', 2, globals.DIRECTIONS.colckwise)
-//view.rotate('x', 1, globals.DIRECTIONS.colckwise)
+//update y spinning (like visual rotation)
+//logic.rotate('y', 0, globals.DIRECTIONS.colckwise)
+view.rotate('x', 1, globals.DIRECTIONS.colckwise)
+view.rotate('y', 0, globals.DIRECTIONS.colckwise)
+//console.log(view.faceToindex)
+// view.rotate('z', 1, globals.DIRECTIONS.counterClockwise)
 
 const controls = new eventConstrol(logic, view)
 
