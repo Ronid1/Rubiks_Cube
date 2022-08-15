@@ -144,10 +144,11 @@ export class cubeVisual {
           Math.round(position[x]) + 1
         ] = index;
       }
-      if (position[z] === minPos)
-        this.faceToindex["back"][Math.abs(Math.round(position[y]) - 1) % 3][
-          Math.round(position[x]) + 1
+      if (position[z] === minPos) {
+        this.faceToindex["back"][Math.abs(Math.round(position[y]) - 1)][
+          Math.round(Math.abs(Math.round(position[x]) - 1))
         ] = index;
+      }
       if (position[z] === maxPos) {
         this.faceToindex["front"][Math.abs(Math.round(position[y]) - 1) % 3][
           Math.round(position[x]) + 1
@@ -214,14 +215,16 @@ export class cubeVisual {
 
   getCubeInLayer(axis, rowNum) {
     let cubesInLayer = new Set();
+    const reverseIndex = globals.ROW_SIZE - 1 - rowNum;
+
     if (axis === "x") {
-      globals.PLAINS[axis].forEach((plain) => {
+      globals.PLANES[axis].forEach((plain) => {
         this.faceToindex[plain][rowNum].forEach((index) => {
           cubesInLayer.add(index);
         });
       });
     } else if (axis === "y") {
-      globals.PLAINS[axis].forEach((plain) => {
+      globals.PLANES[axis].forEach((plain) => {
         if (plain === "bottom") {
           this.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(
             (index) => {
@@ -243,9 +246,11 @@ export class cubeVisual {
         }
       });
     } else {
-      globals.PLAINS[axis].forEach((plain) => {
-        this.faceToindex[plain].forEach((row) => {
-          cubesInLayer.add(row[rowNum]);
+      globals.PLANES[axis].forEach((plane) => {
+        let index = rowNum;
+        this.faceToindex[plane].forEach((row) => {
+          if (plane === "back") index = reverseIndex;
+          cubesInLayer.add(row[index]);
         });
       });
     }
@@ -267,7 +272,6 @@ export class cubeVisual {
     const layer = this.createLayer(axis, rowNum);
     this.scene.add(layer);
 
-    //this.updateFaceToIndex(axis, rowNum, direction);
     this.rotationAnimation(layer, axis, direction).then(() => {
       this.makeingMove = false;
       this.disassembleLayer(layer);
@@ -281,7 +285,7 @@ export class cubeVisual {
     const DEGREE90 = 1.57;
     let step = 0.02;
     let angle = DEGREE90;
-    if (direction === globals.DIRECTIONS.colckwise) {
+    if (direction === globals.DIRECTIONS.clockwise) {
       angle = -DEGREE90;
       step = -step;
     }

@@ -123,23 +123,23 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ROW_SIZE = exports.PLAINS = exports.DIRECTIONS = exports.COLORS = exports.CHAIN_REACTION = void 0;
+exports.ROW_SIZE = exports.PLANES = exports.DIRECTIONS = exports.COLORS = exports.CHAIN_REACTION = void 0;
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var ROW_SIZE = 3;
 exports.ROW_SIZE = ROW_SIZE;
 var DIRECTIONS = {
-  colckwise: 1,
+  clockwise: 1,
   counterClockwise: -1
 };
 exports.DIRECTIONS = DIRECTIONS;
-var PLAINS = {
+var PLANES = {
   x: ['front', 'right', 'back', 'left'],
   y: ['right', 'bottom', 'left', 'top'],
   z: ['front', 'top', 'back', 'bottom']
 };
-exports.PLAINS = PLAINS;
+exports.PLANES = PLANES;
 var CHAIN_REACTION = {
   x: _defineProperty({
     0: 'top'
@@ -194,9 +194,8 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
-/*
- * https://www.reddit.com/r/Cubers/comments/k4ssk5/i_wrote_a_blog_post_on_how_to_build_a_cube_solver/
- */
+var lastRow = globals.ROW_SIZE - 1;
+
 var cubeLogic = /*#__PURE__*/function () {
   function cubeLogic() {
     _classCallCheck(this, cubeLogic);
@@ -241,14 +240,14 @@ var cubeLogic = /*#__PURE__*/function () {
   }, {
     key: "rotate",
     value: function rotate(axis, rowNum, direction) {
-      var _globals$PLAINS$axis = _slicedToArray(globals.PLAINS[axis], 1),
-          firstFace = _globals$PLAINS$axis[0];
+      var _globals$PLANES$axis = _slicedToArray(globals.PLANES[axis], 1),
+          firstFace = _globals$PLANES$axis[0];
 
-      var circularPlane = [].concat(_toConsumableArray(globals.PLAINS[axis]), [firstFace]);
+      var circularPlane = [].concat(_toConsumableArray(globals.PLANES[axis]), [firstFace]);
       if (direction === globals.DIRECTIONS.counterClockwise) circularPlane.reverse();
       if (axis === "x") this.rotateX(circularPlane, rowNum);else if (axis === "y") this.rotateY(circularPlane, rowNum);else this.rotateZ(circularPlane, rowNum); //rotating row 0 or 2 will cause corresponding face to spin
 
-      if (rowNum === 0 || rowNum === globals.ROW_SIZE - 1) this.rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction);
+      if (rowNum === 0 || rowNum === lastRow) this.rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction);
     }
   }, {
     key: "rotateX",
@@ -276,7 +275,7 @@ var cubeLogic = /*#__PURE__*/function () {
           _circularPlane3 = _slicedToArray(_circularPlane2, 1),
           firstFace = _circularPlane3[0];
 
-      var reverseIndex = globals.ROW_SIZE - 1 - rowNum;
+      var reverseIndex = lastRow - rowNum;
       var copyBottom = this.cubeState["bottom"][reverseIndex];
       var copyTop = this.cubeState["top"][rowNum];
       var copyRight = this.cubeState["right"].map(function (row) {
@@ -291,7 +290,7 @@ var cubeLogic = /*#__PURE__*/function () {
         if (face === "bottom") {
           if (circularPlane[index + 1] === "left") _this3.cubeState[face][reverseIndex] = copyLeft.reverse();else _this3.cubeState[face][reverseIndex] = copyRight.reverse();
         } else if (face === "top") {
-          if (circularPlane[index + 1] === "left") _this3.cubeState[face][rowNum] = copyLeft.reverse();else _this3.cubeState[face][rowNum] = copyRight.reverse();
+          if (circularPlane[index + 1] === "left") _this3.cubeState[face][rowNum] = copyLeft.reverse();else _this3.cubeState[face][rowNum] = copyRight;
         } else if (face === "left") {
           if (circularPlane[index + 1] === "top") {
             _this3.cubeState[face].forEach(function (row, i) {
@@ -320,21 +319,35 @@ var cubeLogic = /*#__PURE__*/function () {
     value: function rotateZ(circularPlane, colNum) {
       var _this4 = this;
 
+      var reverseIndex = globals.ROW_SIZE - 1 - colNum;
+
       var _circularPlane4 = _slicedToArray(circularPlane, 1),
           firstFace = _circularPlane4[0];
 
       var copyFirstcol = this.cubeState[firstFace].map(function (row) {
-        return row[colNum];
-      });
+        var col = colNum;
+        if (firstFace === "back") col = reverseIndex;
+        return row[col];
+      }); // back -> top (reverse), bottom->back (reverse)??
+
       circularPlane.forEach(function (face, index) {
         _toConsumableArray(Array(globals.ROW_SIZE)).forEach(function () {
           if (face === firstFace && index > 0) return;
           var nextFace = circularPlane[index + 1];
-          if (nextFace === firstFace) _this4.cubeState[face].map(function (row, i) {
-            row[colNum] = copyFirstcol[i];
-          });else _this4.cubeState[face].map(function (row, i) {
-            row[colNum] = _this4.cubeState[nextFace][i][colNum];
-          });
+
+          if (nextFace === firstFace) {
+            _this4.cubeState[face].map(function (row, i) {
+              row[colNum] = copyFirstcol[i];
+            });
+          } else {
+            var col = colNum;
+            if (face === "back") col = reverseIndex;
+
+            _this4.cubeState[face].map(function (row, i) {
+              if (nextFace === "back" || face === "back") i = globals.ROW_SIZE - 1 - i;
+              row[col] = _this4.cubeState[nextFace][i][colNum];
+            });
+          }
         });
       });
     }
@@ -347,12 +360,13 @@ var cubeLogic = /*#__PURE__*/function () {
         return arr.slice();
       }); //row0 = ex_col0, row1 = ex_col1, row2 = ex_col2
 
-      if (direction === globals.DIRECTIONS.colckwise) {
+      if (direction === globals.DIRECTIONS.clockwise) {
         var _loop2 = function _loop2(index) {
           var colCopy = faceCopy.map(function (row) {
             return row[index];
           });
-          _this5.cubeState[face][index] = colCopy;
+          console.log(colCopy);
+          if (face === "back" || face === "right") _this5.cubeState[face][lastRow - index] = colCopy;else _this5.cubeState[face][index] = colCopy.reverse();
         };
 
         for (var index = 0; index < globals.ROW_SIZE; index++) {
@@ -364,7 +378,7 @@ var cubeLogic = /*#__PURE__*/function () {
           var colCopy = faceCopy.map(function (row) {
             return row[_index];
           });
-          _this5.cubeState[face][Math.abs(_index - globals.ROW_SIZE)] = colCopy;
+          if (face === "back" || face === "right") _this5.cubeState[face][_index] = colCopy.reverse();else _this5.cubeState[face][Math.abs(_index - lastRow)] = colCopy;
         };
 
         for (var _index = globals.ROW_SIZE - 1; _index >= 0; _index--) {
@@ -398,6 +412,9 @@ var cubeLogic = /*#__PURE__*/function () {
       var min = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       return Math.floor(Math.random() * (max - min) + min);
     }
+  }, {
+    key: "solve",
+    value: function solve() {}
   }]);
 
   return cubeLogic;
@@ -41220,7 +41237,9 @@ var cubeVisual = /*#__PURE__*/function () {
           _this3.faceToindex["top"][Math.round(position[z]) + 1][Math.round(position[x]) + 1] = index;
         }
 
-        if (position[z] === minPos) _this3.faceToindex["back"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[x]) + 1] = index;
+        if (position[z] === minPos) {
+          _this3.faceToindex["back"][Math.abs(Math.round(position[y]) - 1)][Math.round(Math.abs(Math.round(position[x]) - 1))] = index;
+        }
 
         if (position[z] === maxPos) {
           _this3.faceToindex["front"][Math.abs(Math.round(position[y]) - 1) % 3][Math.round(position[x]) + 1] = index;
@@ -41303,15 +41322,16 @@ var cubeVisual = /*#__PURE__*/function () {
       var _this7 = this;
 
       var cubesInLayer = new Set();
+      var reverseIndex = globals.ROW_SIZE - 1 - rowNum;
 
       if (axis === "x") {
-        globals.PLAINS[axis].forEach(function (plain) {
+        globals.PLANES[axis].forEach(function (plain) {
           _this7.faceToindex[plain][rowNum].forEach(function (index) {
             cubesInLayer.add(index);
           });
         });
       } else if (axis === "y") {
-        globals.PLAINS[axis].forEach(function (plain) {
+        globals.PLANES[axis].forEach(function (plain) {
           if (plain === "bottom") {
             _this7.faceToindex[plain][globals.ROW_SIZE - 1 - rowNum].forEach(function (index) {
               cubesInLayer.add(index);
@@ -41331,9 +41351,12 @@ var cubeVisual = /*#__PURE__*/function () {
           }
         });
       } else {
-        globals.PLAINS[axis].forEach(function (plain) {
-          _this7.faceToindex[plain].forEach(function (row) {
-            cubesInLayer.add(row[rowNum]);
+        globals.PLANES[axis].forEach(function (plane) {
+          var index = rowNum;
+
+          _this7.faceToindex[plane].forEach(function (row) {
+            if (plane === "back") index = reverseIndex;
+            cubesInLayer.add(row[index]);
           });
         });
       }
@@ -41366,8 +41389,7 @@ var cubeVisual = /*#__PURE__*/function () {
 
       this.makeingMove = true;
       var layer = this.createLayer(axis, rowNum);
-      this.scene.add(layer); //this.updateFaceToIndex(axis, rowNum, direction);
-
+      this.scene.add(layer);
       this.rotationAnimation(layer, axis, direction).then(function () {
         _this8.makeingMove = false;
 
@@ -41393,7 +41415,7 @@ var cubeVisual = /*#__PURE__*/function () {
                 step = 0.02;
                 angle = DEGREE90;
 
-                if (direction === globals.DIRECTIONS.colckwise) {
+                if (direction === globals.DIRECTIONS.clockwise) {
                   angle = -DEGREE90;
                   step = -step;
                 }
@@ -41590,18 +41612,20 @@ function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "functio
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 var logic = new _cubeLogic.cubeLogic();
-console.log(logic.getState());
 var view = new _cubeVisual.cubeVisual(logic);
-console.log(view.indexToFaces);
-console.log(view.faceToindex);
-logic.rotate('x', 2, globals.DIRECTIONS.counterClockwise);
-view.rotate('x', 2, globals.DIRECTIONS.colcounterClockwiseckwise); //logic.rotate('z', 2, globals.DIRECTIONS.colckwise)
-//view.rotate('z', 2, globals.DIRECTIONS.colckwise)
-//console.log(view.faceToindex)
-// view.rotate('z', 1, globals.DIRECTIONS.counterClockwise)
+var controls = new _eventContol.eventConstrol(logic, view);
+logic.rotate("y", 2, globals.DIRECTIONS.counterClockwise);
+view.rotate("y", 2, globals.DIRECTIONS.colcounterClockwiseckwise);
+delay(2000).then(function () {
+  logic.rotate("z", 2, globals.DIRECTIONS.counterClockwise);
+  view.rotate("z", 2, globals.DIRECTIONS.counterClockwise);
+});
 
-var controls = new _eventContol.eventConstrol(logic, view); // shuffle button -> get sequence from logic, implement in view
-// solve button
+function delay(time) {
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, time);
+  });
+}
 },{"./logic/cubeLogic":"logic/cubeLogic.js","./view/cubeVisual":"view/cubeVisual.js","./view/eventContol":"view/eventContol.js","./logic/globals":"logic/globals.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

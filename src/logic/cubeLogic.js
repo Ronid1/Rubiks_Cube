@@ -1,7 +1,6 @@
 import * as globals from "./globals";
-/*
- * https://www.reddit.com/r/Cubers/comments/k4ssk5/i_wrote_a_blog_post_on_how_to_build_a_cube_solver/
- */
+
+const lastRow = globals.ROW_SIZE - 1
 
 export class cubeLogic {
   constructor() {
@@ -33,8 +32,8 @@ export class cubeLogic {
   }
 
   rotate(axis, rowNum, direction) {
-    const [firstFace] = globals.PLAINS[axis];
-    const circularPlane = [...globals.PLAINS[axis], firstFace];
+    const [firstFace] = globals.PLANES[axis];
+    const circularPlane = [...globals.PLANES[axis], firstFace];
 
     if (direction === globals.DIRECTIONS.counterClockwise)
       circularPlane.reverse();
@@ -44,7 +43,7 @@ export class cubeLogic {
     else this.rotateZ(circularPlane, rowNum);
 
     //rotating row 0 or 2 will cause corresponding face to spin
-    if (rowNum === 0 || rowNum === globals.ROW_SIZE - 1)
+    if (rowNum === 0 || rowNum === lastRow)
       this.rotateFace(globals.CHAIN_REACTION[axis][rowNum], direction);
   }
 
@@ -63,7 +62,7 @@ export class cubeLogic {
   rotateY(circularPlane, rowNum) {
     circularPlane = circularPlane.reverse();
     const [firstFace] = circularPlane;
-    const reverseIndex = globals.ROW_SIZE - 1 - rowNum;
+    const reverseIndex = lastRow - rowNum;
 
     const copyBottom = this.cubeState["bottom"][reverseIndex];
     const copyTop = this.cubeState["top"][rowNum];
@@ -83,7 +82,7 @@ export class cubeLogic {
       } else if (face === "top") {
         if (circularPlane[index + 1] === "left")
           this.cubeState[face][rowNum] = copyLeft.reverse();
-        else this.cubeState[face][rowNum] = copyRight.reverse();
+        else this.cubeState[face][rowNum] = copyRight;
       } else if (face === "left") {
         if (circularPlane[index + 1] === "top") {
           this.cubeState[face].forEach((row, i) => {
@@ -109,25 +108,33 @@ export class cubeLogic {
   }
 
   rotateZ(circularPlane, colNum) {
+    const reverseIndex = globals.ROW_SIZE - 1 - colNum;
     const [firstFace] = circularPlane;
     const copyFirstcol = this.cubeState[firstFace].map((row) => {
-      return row[colNum];
+      let col = colNum;
+      if (firstFace === "back") col = reverseIndex;
+      return row[col];
     });
 
+    // back -> top (reverse), bottom->back (reverse)??
     circularPlane.forEach((face, index) => {
       [...Array(globals.ROW_SIZE)].forEach(() => {
         if (face === firstFace && index > 0) return;
 
         const nextFace = circularPlane[index + 1];
-
-        if (nextFace === firstFace)
+        if (nextFace === firstFace) {
           this.cubeState[face].map((row, i) => {
             row[colNum] = copyFirstcol[i];
           });
-        else
+        } else {
+          let col = colNum;
+          if (face === "back") col = reverseIndex;
           this.cubeState[face].map((row, i) => {
-            row[colNum] = this.cubeState[nextFace][i][colNum];
+            if (nextFace === "back" || face === "back")
+              i = globals.ROW_SIZE - 1 - i;
+            row[col] = this.cubeState[nextFace][i][colNum];
           });
+        }
       });
     });
   }
@@ -137,13 +144,17 @@ export class cubeLogic {
       return arr.slice();
     });
     //row0 = ex_col0, row1 = ex_col1, row2 = ex_col2
-    if (direction === globals.DIRECTIONS.colckwise) {
+    if (direction === globals.DIRECTIONS.clockwise) {
       for (let index = 0; index < globals.ROW_SIZE; index++) {
         const colCopy = faceCopy.map((row) => {
           return row[index];
         });
-
-        this.cubeState[face][index] = colCopy;
+        console.log(colCopy);
+        if (face === "back" || face === "right")
+          this.cubeState[face][lastRow - index] = colCopy;
+        else
+          this.cubeState[face][index] =
+            colCopy.reverse();
       }
     }
 
@@ -153,7 +164,11 @@ export class cubeLogic {
         const colCopy = faceCopy.map((row) => {
           return row[index];
         });
-        this.cubeState[face][Math.abs(index - globals.ROW_SIZE)] = colCopy;
+        if (face === "back" || face === "right")
+          this.cubeState[face][index] = colCopy.reverse();
+        else
+          this.cubeState[face][Math.abs(index - lastRow)] =
+            colCopy;
       }
     }
   }
@@ -173,4 +188,6 @@ export class cubeLogic {
   random(max, min = 0) {
     return Math.floor(Math.random() * (max - min) + min);
   }
+
+  solve() {}
 }
