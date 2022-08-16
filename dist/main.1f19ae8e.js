@@ -41669,7 +41669,23 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 
 var logic = new _cubeLogic.cubeLogic();
 var view = new _cubeVisual.cubeVisual(logic);
-var controls = new _eventContol.eventConstrol(logic, view);
+var controls = new _eventContol.eventConstrol(logic, view); // add control buttons
+
+var shuffleBtn = document.createElement("button");
+shuffleBtn.innerHTML = "Shuffle";
+document.getElementById("controls").appendChild(shuffleBtn);
+
+shuffleBtn.onclick = function () {
+  return shuffle();
+};
+
+var solveBtn = document.createElement("button");
+solveBtn.innerHTML = "Solve";
+document.getElementById("controls").appendChild(solveBtn);
+
+solveBtn.onclick = function () {
+  return solve();
+};
 
 function delay(time) {
   return new Promise(function (resolve) {
@@ -41699,7 +41715,7 @@ function _shuffle() {
                   switch (_context.prev = _context.next) {
                     case 0:
                       _context.next = 2;
-                      return delay(2000).then(function () {
+                      return delay(1500).then(function () {
                         view.rotate(moves[i].axis, moves[i].row, moves[i].direction);
                         logic.rotate(moves[i].axis, moves[i].row, moves[i].direction);
                       });
@@ -41736,7 +41752,9 @@ function _shuffle() {
   return _shuffle.apply(this, arguments);
 }
 
-shuffle();
+function solve() {
+  return;
+}
 },{"./logic/cubeLogic":"logic/cubeLogic.js","./view/cubeVisual":"view/cubeVisual.js","./view/eventContol":"view/eventContol.js","./logic/globals":"logic/globals.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
