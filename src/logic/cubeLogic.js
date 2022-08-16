@@ -1,6 +1,6 @@
 import * as globals from "./globals";
 
-const lastRow = globals.ROW_SIZE - 1
+const lastRow = globals.ROW_SIZE - 1;
 
 export class cubeLogic {
   constructor() {
@@ -31,6 +31,14 @@ export class cubeLogic {
     return this.cubeState;
   }
 
+  getCubeCol(face, col, reverse = false) {
+    if (reverse) col = lastRow - colNum;
+
+    return this.cubeState[face].map((row) => {
+      return row[col];
+    });
+  }
+
   rotate(axis, rowNum, direction) {
     const [firstFace] = globals.PLANES[axis];
     const circularPlane = [...globals.PLANES[axis], firstFace];
@@ -38,9 +46,17 @@ export class cubeLogic {
     if (direction === globals.DIRECTIONS.counterClockwise)
       circularPlane.reverse();
 
-    if (axis === "x") this.rotateX(circularPlane, rowNum);
-    else if (axis === "y") this.rotateY(circularPlane, rowNum);
-    else this.rotateZ(circularPlane, rowNum);
+    switch (axis) {
+      case "x":
+        this.rotateX(circularPlane, rowNum);
+        break;
+      case "y":
+        this.rotateY(circularPlane, rowNum);
+        break;
+      case "z":
+        this.rotateZ(circularPlane, rowNum);
+        break;
+    }
 
     //rotating row 0 or 2 will cause corresponding face to spin
     if (rowNum === 0 || rowNum === lastRow)
@@ -62,73 +78,78 @@ export class cubeLogic {
   rotateY(circularPlane, rowNum) {
     circularPlane = circularPlane.reverse();
     const [firstFace] = circularPlane;
-    const reverseIndex = lastRow - rowNum;
+    const reverseRowNum = lastRow - rowNum;
 
-    const copyBottom = this.cubeState["bottom"][reverseIndex];
+    const copyBottom = this.cubeState["bottom"][reverseRowNum];
     const copyTop = this.cubeState["top"][rowNum];
-    const copyRight = this.cubeState["right"].map((row) => {
-      return row[reverseIndex];
-    });
-    const copyLeft = this.cubeState["left"].map((row) => {
-      return row[rowNum];
-    });
+    const copyRight = this.getCubeCol("right", reverseRowNum);
+    const copyLeft = this.getCubeCol("left", rowNum);
 
     circularPlane.forEach((face, index) => {
+      let nextFace = circularPlane[index + 1];
       if (face === firstFace && index > 0) return;
-      if (face === "bottom") {
-        if (circularPlane[index + 1] === "left")
-          this.cubeState[face][reverseIndex] = copyLeft.reverse();
-        else this.cubeState[face][reverseIndex] = copyRight.reverse();
-      } else if (face === "top") {
-        if (circularPlane[index + 1] === "left")
-          this.cubeState[face][rowNum] = copyLeft.reverse();
-        else this.cubeState[face][rowNum] = copyRight;
-      } else if (face === "left") {
-        if (circularPlane[index + 1] === "top") {
-          this.cubeState[face].forEach((row, i) => {
-            this.cubeState[face][i][rowNum] = copyTop[i];
-          });
-        } else {
-          this.cubeState[face].forEach((row, i) => {
-            this.cubeState[face][i][rowNum] = copyBottom[i];
-          });
-        }
-      } else {
-        if (circularPlane[index + 1] === "top") {
-          this.cubeState[face].forEach((row, i) => {
-            this.cubeState[face][i][reverseIndex] = copyTop[i];
-          });
-        } else {
-          this.cubeState[face].forEach((row, i) => {
-            this.cubeState[face][i][reverseIndex] = copyBottom[i];
-          });
-        }
+
+      switch (face) {
+        case "bottom":
+          if (nextFace === "left")
+            this.cubeState[face][reverseRowNum] = copyLeft;
+          else this.cubeState[face][reverseRowNum] = copyRight.reverse();
+          break;
+
+        case "top":
+          if (nextFace === "left")
+            this.cubeState[face][rowNum] = copyLeft.reverse();
+          else this.cubeState[face][rowNum] = copyRight;
+          break;
+
+        case "left":
+          if (nextFace === "top") {
+            this.cubeState[face].forEach((row, i) => {
+              this.cubeState[face][i][rowNum] = copyTop.reverse()[i];
+            });
+          } else {
+            this.cubeState[face].forEach((row, i) => {
+              this.cubeState[face][lastRow - i][rowNum] = copyBottom.reverse()[i];
+            });
+          }
+          break;
+
+        case "right":
+          if (nextFace === "top") {
+            this.cubeState[face].forEach((row, i) => {
+              this.cubeState[face][i][reverseRowNum] = copyTop[i];
+            });
+          } else {
+            this.cubeState[face].forEach((row, i) => {
+              this.cubeState[face][lastRow - i][reverseRowNum] = copyBottom[i];
+            });
+          }
+          break;
       }
     });
   }
 
   rotateZ(circularPlane, colNum) {
-    const reverseIndex = globals.ROW_SIZE - 1 - colNum;
+    const reverseColNum = lastRow - colNum;
     const [firstFace] = circularPlane;
-    const copyFirstcol = this.cubeState[firstFace].map((row) => {
-      let col = colNum;
-      if (firstFace === "back") col = reverseIndex;
-      return row[col];
-    });
+    let reverse = false;
+    if (firstFace === "back") reverse = true;
+    const copyFirstcol = this.getCubeCol(firstFace, colNum, reverse);
 
-    // back -> top (reverse), bottom->back (reverse)??
     circularPlane.forEach((face, index) => {
       [...Array(globals.ROW_SIZE)].forEach(() => {
         if (face === firstFace && index > 0) return;
 
         const nextFace = circularPlane[index + 1];
+
         if (nextFace === firstFace) {
           this.cubeState[face].map((row, i) => {
             row[colNum] = copyFirstcol[i];
           });
         } else {
           let col = colNum;
-          if (face === "back") col = reverseIndex;
+          if (face === "back") col = reverseColNum;
+
           this.cubeState[face].map((row, i) => {
             if (nextFace === "back" || face === "back")
               i = globals.ROW_SIZE - 1 - i;
@@ -143,46 +164,42 @@ export class cubeLogic {
     let faceCopy = this.cubeState[face].map((arr) => {
       return arr.slice();
     });
-    //row0 = ex_col0, row1 = ex_col1, row2 = ex_col2
-    if (direction === globals.DIRECTIONS.clockwise) {
-      for (let index = 0; index < globals.ROW_SIZE; index++) {
-        const colCopy = faceCopy.map((row) => {
-          return row[index];
-        });
-        console.log(colCopy);
-        if (face === "back" || face === "right")
-          this.cubeState[face][lastRow - index] = colCopy;
-        else
-          this.cubeState[face][index] =
-            colCopy.reverse();
-      }
-    }
 
-    //row0 = ex_col2, row1 = ex_col1, row2 = ex_col0
-    else {
-      for (let index = globals.ROW_SIZE - 1; index >= 0; index--) {
-        const colCopy = faceCopy.map((row) => {
-          return row[index];
+    if (direction === globals.DIRECTIONS.clockwise) {
+      for (let i = 0; i < globals.ROW_SIZE; i++) {
+        let index = i
+        let colCopy = faceCopy.map((row) => {
+          return row[i];
         });
-        if (face === "back" || face === "right")
-          this.cubeState[face][index] = colCopy.reverse();
-        else
-          this.cubeState[face][Math.abs(index - lastRow)] =
-            colCopy;
+        if (face === "bottom" || face === "right" || face === "back") index = lastRow - index;
+        if (face === "front" || face === "top" || face === "left") colCopy = colCopy.reverse();
+        this.cubeState[face][index] = colCopy;
+      }
+    } else {
+      for (let i = globals.ROW_SIZE - 1; i >= 0; i--) {
+        let index = i
+        const colCopy = faceCopy.map((row) => {
+          return row[i];
+        });
+        if (face === "top" || face === "left" || face === "front") index = lastRow - index;
+        if (face === "back" || face === "bottom" || face === "right" ) colCopy = colCopy.reverse();
+        this.cubeState[face][index] = colCopy;
       }
     }
   }
 
   shuffle() {
+    let moves = [];
     const axes = ["x", "y", "z"];
-    const numOfRotates = this.random(31, 16);
+    const numOfRotates = this.random(16, 7);
     [...Array(numOfRotates)].forEach(() => {
       const axis = axes[this.random(3)];
       const row = this.random(globals.ROW_SIZE);
-      const direction = Object.keys(globals.DIRECTIONS)[this.random(2)];
-      console.log(`axis: ${axis}, row: ${row}, direction: ${direction}`);
-      this.rotate(axis, row, direction);
+      const direction = Object.values(globals.DIRECTIONS)[this.random(2)];
+      moves.push({ axis, row, direction });
     });
+
+    return moves;
   }
 
   random(max, min = 0) {

@@ -7,13 +7,25 @@ const logic = new cubeLogic();
 const view = new cubeVisual(logic);
 const controls = new eventConstrol(logic, view);
 
-logic.rotate("y", 2, globals.DIRECTIONS.counterClockwise);
-view.rotate("y", 2, globals.DIRECTIONS.colcounterClockwiseckwise);
-delay(2000).then(() => {
-  logic.rotate("z", 2, globals.DIRECTIONS.counterClockwise);
-  view.rotate("z", 2, globals.DIRECTIONS.counterClockwise);
-});
-
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
+
+async function shuffle(){
+    let moves = logic.shuffle();
+    let [firstMove] = moves
+    
+    logic.rotate(firstMove.axis, firstMove.row, firstMove.direction);
+    view.rotate(firstMove.axis, firstMove.row, firstMove.direction);
+
+    for (let i = 1; i < moves.length; i++){
+        await delay(2000).then(() => {
+            view.rotate(moves[i].axis, moves[i].row, moves[i].direction);
+            logic.rotate(moves[i].axis, moves[i].row, moves[i].direction);
+
+          });
+    }
+        
+}
+
+shuffle()
