@@ -1,7 +1,23 @@
 body {
   margin: 0;
   padding: 20px;
-  background-color: black;
+  background-color: rgb(245, 243, 243);
+  font-family: "Roboto", sans-serif;
+  text-align: center;
+}
+
+#canvas {
+  /* border: 3px solid green; */
+  width: 100%;
+  height: 550px;
+  margin: 0px;
+  padding: 0px;
+  text-align: center;
+}
+
+#instructions{
+  margin: auto;
+  text-align: center;
 }
 
 button {
@@ -12,7 +28,6 @@ button {
   border-radius: 2em;
   box-sizing: border-box;
   text-decoration: none;
-  font-family: "Roboto", sans-serif;
   font-weight: 300;
   font-size: 20px;
   background-color:#46b673;
@@ -23,13 +38,18 @@ button {
 }
 
 button:hover {
-  border-color: rgba(255, 255, 255, 1);
+  border-color: #2a6f46;
   cursor: pointer;
 }
 
 #controls {
   margin-top: 5px;
   text-align: center;
+}
+
+#arrow{
+  height: 40px;
+  padding: 0px 5px;
 }
 
 

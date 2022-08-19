@@ -368,11 +368,13 @@ var cubeLogic = /*#__PURE__*/function () {
             });
           } else {
             var col = colNum;
+            var colToCopy = colNum;
             if (face === "back") col = reverseColNum;
+            if (face === "top" && nextFace === "back") colToCopy = lastRow - colToCopy;
 
             _this4.cubeState[face].map(function (row, i) {
-              if (nextFace === "back" || face === "back") i = globals.ROW_SIZE - 1 - i;
-              row[col] = _this4.cubeState[nextFace][i][colNum];
+              if (nextFace === "back" || face === "back") i = lastRow - i;
+              row[col] = _this4.cubeState[nextFace][i][colToCopy];
             });
           }
         });
@@ -448,9 +450,6 @@ var cubeLogic = /*#__PURE__*/function () {
       var min = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       return Math.floor(Math.random() * (max - min) + min);
     }
-  }, {
-    key: "solve",
-    value: function solve() {}
   }]);
 
   return cubeLogic;
@@ -41116,13 +41115,23 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
+var FACES = {
+  right: 0,
+  left: 1,
+  top: 2,
+  bottom: 3,
+  front: 4,
+  back: 5
+};
+
 var cubeVisual = /*#__PURE__*/function () {
-  function cubeVisual(cubeLogic) {
+  function cubeVisual(cubeLogic, canvas) {
     _classCallCheck(this, cubeVisual);
 
     //scene managment
+    this.canvas = canvas;
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(75, this.canvas.clientWidth / this.canvas.clientHeight, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer();
     this.controls = new _OrbitControls.OrbitControls(this.camera, this.renderer.domElement); //cube managment
 
@@ -41142,16 +41151,17 @@ var cubeVisual = /*#__PURE__*/function () {
   _createClass(cubeVisual, [{
     key: "initiateScene",
     value: function initiateScene() {
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(this.renderer.domElement);
-      this.renderer.render(this.scene, this.camera); //set lights and camera
+      this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+      this.canvas.appendChild(this.renderer.domElement);
+      this.renderer.render(this.scene, this.camera);
+      this.renderer.setClearColor(0x000000, 0); //set lights and camera
 
       var ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
       this.scene.add(ambientLight);
       var directLight = new THREE.AmbientLight(0xffffff, 0.7);
       directLight.position.set(10, 20, 0);
       this.scene.add(directLight);
-      this.camera.position.set(5, 3, -3);
+      this.camera.position.set(5, 2, -3);
       window.addEventListener("resize", this.onWindowResize, false);
     }
   }, {
@@ -41164,9 +41174,9 @@ var cubeVisual = /*#__PURE__*/function () {
   }, {
     key: "onWindowResize",
     value: function onWindowResize() {
-      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.aspect = this.canvas.clientWidth / this.canvas.clientHeight;
       this.camera.updateProjectionMatrix();
-      this.renderer.setSize(window.innerWidth / window.innerHeight);
+      this.renderer.setSize(this.canvas.clientWidth / this.canvas.clientHeight);
     }
   }, {
     key: "initiateRubiks",
@@ -41226,14 +41236,6 @@ var cubeVisual = /*#__PURE__*/function () {
 
       var numOfFaces = 6;
       var material = [];
-      var Faces = {
-        right: 0,
-        left: 1,
-        top: 2,
-        bottom: 3,
-        front: 4,
-        back: 5
-      };
       var defaultColor = new THREE.MeshPhongMaterial({
         color: "#1e1e1f"
       });
@@ -41244,11 +41246,38 @@ var cubeVisual = /*#__PURE__*/function () {
 
       var visableFaces = this.indexToFaces[index];
       visableFaces.forEach(function (face) {
-        material[Faces[face]] = new THREE.MeshPhongMaterial({
+        material[FACES[face]] = new THREE.MeshPhongMaterial({
           color: _this2.getCellsColor(face, index)
         });
       });
       return material;
+    }
+  }, {
+    key: "highlight",
+    value: function highlight(face, index) {
+      var highlightColors = {
+        red: "#780101",
+        "#e8651a": "#c94c04",
+        yellow: "#858503",
+        white: "#8c8989",
+        green: "#025902",
+        blue: "#020269"
+      };
+      var color = this.getCellsColor(face, index);
+      if (!color) return -1;
+      var cubie = this.cubes[index];
+      cubie.material[FACES[face]] = new THREE.MeshPhongMaterial({
+        color: highlightColors[color]
+      });
+    }
+  }, {
+    key: "stopHighlight",
+    value: function stopHighlight(face, index) {
+      var color = this.getCellsColor(face, index);
+      var cubie = this.cubes[index];
+      cubie.material[FACES[face]] = new THREE.MeshPhongMaterial({
+        color: color
+      });
     }
   }, {
     key: "mapFaceToIndex",
@@ -41319,7 +41348,8 @@ var cubeVisual = /*#__PURE__*/function () {
     value: function getCellsColor(face, cubeIndex) {
       var _this5 = this;
 
-      var row, col;
+      var row = -1,
+          col = -1;
       this.faceToindex[face].forEach(function (val, r) {
         for (var i = 0; i < _this5.faceToindex[face].length; i++) {
           if (_this5.faceToindex[face][r][i] === cubeIndex) {
@@ -41329,16 +41359,15 @@ var cubeVisual = /*#__PURE__*/function () {
           }
         }
       });
+      if (row === -1) return null;
       return this.cubeLogic.getState()[face][row][col];
     }
   }, {
     key: "getCubeIndex",
     value: function getCubeIndex(thisCubeId) {
-      var val;
-      this.cubes.forEach(function (cube, index) {
-        if (cube.id === thisCubeId) val = index;
-      });
-      return val;
+      for (var index = 0; index < this.cubes.length; index++) {
+        if (this.cubes[index].id === thisCubeId) return index;
+      }
     }
   }, {
     key: "createLayer",
@@ -41448,7 +41477,7 @@ var cubeVisual = /*#__PURE__*/function () {
             switch (_context.prev = _context.next) {
               case 0:
                 DEGREE90 = 1.57;
-                step = 0.02;
+                step = 0.04;
                 angle = DEGREE90;
 
                 if (direction === globals.DIRECTIONS.clockwise) {
@@ -41547,15 +41576,20 @@ var faces = {
   10: "back",
   11: "back"
 };
+var LEFT = 37;
+var UP = 38;
+var RIGHT = 39;
+var DOWN = 40;
 
 var eventConstrol = /*#__PURE__*/function () {
-  function eventConstrol(logic, view) {
+  function eventConstrol(logic, view, canvas) {
     _classCallCheck(this, eventConstrol);
 
     this.cubeLogic = logic;
     this.cubeView = view;
+    this.canvas = canvas;
     this.makingMove = false;
-    this.cubeIndex = 0;
+    this.cubeIndex = null;
     this.cubeFace = null;
     this.raycaster = new THREE.Raycaster();
     this.clickLocation = new THREE.Vector2();
@@ -41570,31 +41604,37 @@ var eventConstrol = /*#__PURE__*/function () {
       window.addEventListener("mousedown", function (e) {
         return _this.onMouseDown(e);
       });
-      window.addEventListener("mouseup", function (e) {
-        return _this.onMouseUp(e);
-      }, false);
-      window.addEventListener("mousemove", function () {
-        return _this.onMouseMove();
-      }, false);
+      window.addEventListener("keydown", function (e) {
+        return _this.onKeyDown(e);
+      });
     }
   }, {
     key: "onMouseDown",
     value: function onMouseDown(event) {
+      if (this.cubeFace || this.cubeIndex) {
+        this.cubeView.stopHighlight(this.cubeFace, this.cubeIndex);
+        this.cubeFace = null;
+        this.cubeIndex = null;
+      }
+
       this.clickLocation.x = this.relativeXLocation(event.clientX);
       this.clickLocation.y = this.relativeYLocation(event.clientY);
       this.raycaster.setFromCamera(this.clickLocation, this.cubeView.camera);
 
-      var _this$raycaster$inter = this.raycaster.intersectObjects(this.cubeView.cubes, true),
+      var _this$raycaster$inter = this.raycaster.intersectObjects(this.cubeView.scene.children, true),
           _this$raycaster$inter2 = _slicedToArray(_this$raycaster$inter, 1),
           intersect = _this$raycaster$inter2[0];
 
-      if (!intersect) return; //disaple cube movment
-
-      this.cubeView.controls.enable = false;
+      if (!intersect) return;
       this.makingMove = true;
       this.cubeIndex = this.cubeView.getCubeIndex(intersect.object.id);
-      console.log(this.cubeIndex);
       this.cubeFace = faces[intersect.faceIndex];
+
+      if (this.cubeView.highlight(this.cubeFace, this.cubeIndex) === -1) {
+        this.makingMove = false;
+        this.cubeFace = null;
+        this.cubeIndex = null;
+      }
     }
   }, {
     key: "relativeXLocation",
@@ -41607,25 +41647,174 @@ var eventConstrol = /*#__PURE__*/function () {
       return -(y / window.innerHeight) * 2 + 1;
     }
   }, {
-    key: "onMouseUp",
-    value: function onMouseUp(event) {
-      this.cubeView.controls.enable = true;
-      if (!this.makingMove) return;
-      var x = this.relativeXLocation(event.clientX);
-      var y = this.relativeYLocation(event.clientY); // if dist < ?? don't make a move
-      //find direction by determining which box end point is closest to
-      // axis between start and end point
-      //axis (x,y,z)
-      // x is pernment
-      // y/z can change (up/down spin 360)
-      //calculate direction
-      // update state and view
-      // this.cubeLogic.rotate(axis, rowNum, direction);
-      // this.cubeView.rotate(axis, rowNum, direction);
+    key: "getSelectedRowAndCol",
+    value: function getSelectedRowAndCol() {
+      var _this2 = this;
+
+      var row, col;
+      this.cubeView.faceToindex[this.cubeFace].forEach(function (line, i) {
+        line.forEach(function (value, j) {
+          if (value === _this2.cubeIndex) {
+            row = i;
+            col = j;
+          }
+        });
+      });
+      return {
+        row: row,
+        col: col
+      };
     }
   }, {
-    key: "onMouseMove",
-    value: function onMouseMove(event) {}
+    key: "onKeyDown",
+    value: function onKeyDown(event) {
+      if (!this.makingMove) return;
+
+      var _this$getSelectedRowA = this.getSelectedRowAndCol(),
+          row = _this$getSelectedRowA.row,
+          col = _this$getSelectedRowA.col;
+
+      switch (event.keyCode) {
+        case UP:
+          this.rotateUp(col);
+          this.makingMove = false;
+          break;
+
+        case DOWN:
+          this.rotateDown(col);
+          this.makingMove = false;
+          break;
+
+        case RIGHT:
+          this.rotateRight(row);
+          this.makingMove = false;
+          break;
+
+        case LEFT:
+          this.rotateLeft(row);
+          this.makingMove = false;
+          break;
+
+        default:
+          this.makingMove = false;
+      }
+    }
+  }, {
+    key: "rotateUp",
+    value: function rotateUp(col) {
+      var lastRow = globals.ROW_SIZE - 1;
+
+      switch (this.cubeFace) {
+        case "front":
+          this.cubeLogic.rotate("z", col, globals.DIRECTIONS.counterClockwise);
+          this.cubeView.rotate("z", col, globals.DIRECTIONS.counterClockwise);
+          break;
+
+        case "back":
+          this.cubeLogic.rotate("z", lastRow - col, globals.DIRECTIONS.clockwise);
+          this.cubeView.rotate("z", lastRow - col, globals.DIRECTIONS.clockwise);
+          return;
+
+        case "right":
+          this.cubeLogic.rotate("y", lastRow - col, globals.DIRECTIONS.counterClockwise);
+          this.cubeView.rotate("y", lastRow - col, globals.DIRECTIONS.counterClockwise);
+          return;
+
+        case "left":
+          this.cubeLogic.rotate("y", col, globals.DIRECTIONS.clockwise);
+          this.cubeView.rotate("y", col, globals.DIRECTIONS.clockwise);
+          return;
+
+        case "bottom":
+        case "top":
+          this.cubeLogic.rotate("z", col, globals.DIRECTIONS.counterClockwise);
+          this.cubeView.rotate("z", col, globals.DIRECTIONS.counterClockwise);
+          return;
+      }
+    }
+  }, {
+    key: "rotateDown",
+    value: function rotateDown(col) {
+      var lastRow = globals.ROW_SIZE - 1;
+
+      switch (this.cubeFace) {
+        case "front":
+          this.cubeLogic.rotate("z", col, globals.DIRECTIONS.clockwise);
+          this.cubeView.rotate("z", col, globals.DIRECTIONS.clockwise);
+          return;
+
+        case "back":
+          this.cubeLogic.rotate("z", lastRow - col, globals.DIRECTIONS.counterClockwise);
+          this.cubeView.rotate("z", lastRow - col, globals.DIRECTIONS.counterClockwise);
+          return;
+
+        case "right":
+          this.cubeLogic.rotate("y", lastRow - col, globals.DIRECTIONS.clockwise);
+          this.cubeView.rotate("y", lastRow - col, globals.DIRECTIONS.clockwise);
+          return;
+
+        case "left":
+          this.cubeLogic.rotate("y", col, globals.DIRECTIONS.counterClockwise);
+          this.cubeView.rotate("y", col, globals.DIRECTIONS.counterClockwise);
+          return;
+
+        case "bottom":
+        case "top":
+          this.cubeLogic.rotate("z", col, globals.DIRECTIONS.clockwise);
+          this.cubeView.rotate("z", col, globals.DIRECTIONS.clockwise);
+          return;
+      }
+    }
+  }, {
+    key: "rotateRight",
+    value: function rotateRight(row) {
+      var lastRow = globals.ROW_SIZE - 1;
+
+      switch (this.cubeFace) {
+        case "front":
+        case "back":
+        case "right":
+        case "left":
+          this.cubeLogic.rotate("x", row, globals.DIRECTIONS.counterClockwise);
+          this.cubeView.rotate("x", row, globals.DIRECTIONS.counterClockwise);
+          return;
+
+        case "bottom":
+          this.cubeLogic.rotate("y", lastRow - row, globals.DIRECTIONS.counterClockwise);
+          this.cubeView.rotate("y", lastRow - row, globals.DIRECTIONS.counterClockwise);
+          return;
+
+        case "top":
+          this.cubeLogic.rotate("y", row, globals.DIRECTIONS.clockwise);
+          this.cubeView.rotate("y", row, globals.DIRECTIONS.clockwise);
+          return;
+      }
+    }
+  }, {
+    key: "rotateLeft",
+    value: function rotateLeft(row) {
+      var lastRow = globals.ROW_SIZE - 1;
+
+      switch (this.cubeFace) {
+        case "front":
+        case "back":
+        case "right":
+        case "left":
+          this.cubeLogic.rotate("x", row, globals.DIRECTIONS.clockwise);
+          this.cubeView.rotate("x", row, globals.DIRECTIONS.clockwise);
+          return;
+
+        case "bottom":
+          this.cubeLogic.rotate("y", lastRow - row, globals.DIRECTIONS.clockwise);
+          this.cubeView.rotate("y", lastRow - row, globals.DIRECTIONS.clockwise);
+          return;
+
+        case "top":
+          this.cubeLogic.rotate("y", row, globals.DIRECTIONS.counterClockwise);
+          this.cubeView.rotate("y", row, globals.DIRECTIONS.counterClockwise);
+          return;
+      }
+    }
   }]);
 
   return eventConstrol;
@@ -41667,9 +41856,10 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
+var canvas = document.getElementById("canvas");
 var logic = new _cubeLogic.cubeLogic();
-var view = new _cubeVisual.cubeVisual(logic);
-var controls = new _eventContol.eventConstrol(logic, view); // add control buttons
+var view = new _cubeVisual.cubeVisual(logic, canvas);
+var controls = new _eventContol.eventConstrol(logic, view, canvas); // add control buttons
 
 var shuffleBtn = document.createElement("button");
 shuffleBtn.innerHTML = "Shuffle";
@@ -41677,15 +41867,11 @@ document.getElementById("controls").appendChild(shuffleBtn);
 
 shuffleBtn.onclick = function () {
   return shuffle();
-};
+}; // const solveBtn = document.createElement("button");
+// solveBtn.innerHTML = "Solve";
+// document.getElementById("controls").appendChild(solveBtn);
+// solveBtn.onclick = () => solve()
 
-var solveBtn = document.createElement("button");
-solveBtn.innerHTML = "Solve";
-document.getElementById("controls").appendChild(solveBtn);
-
-solveBtn.onclick = function () {
-  return solve();
-};
 
 function delay(time) {
   return new Promise(function (resolve) {
@@ -41695,7 +41881,19 @@ function delay(time) {
 
 function shuffle() {
   return _shuffle.apply(this, arguments);
-}
+} // function solve(){
+//     logic.rotate('x',0,1)
+//     view.rotate('x',0, 1)
+//     delay(2000).then(() => {
+//         logic.rotate('y',0,-1)
+//         view.rotate('y',0,-1)
+//     })
+//     delay(4000).then(() => {
+//         logic.rotate('z',2,-1)
+//         view.rotate('z',2,-1)
+//     })
+// }
+
 
 function _shuffle() {
   _shuffle = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
@@ -41715,7 +41913,7 @@ function _shuffle() {
                   switch (_context.prev = _context.next) {
                     case 0:
                       _context.next = 2;
-                      return delay(1500).then(function () {
+                      return delay(850).then(function () {
                         view.rotate(moves[i].axis, moves[i].row, moves[i].direction);
                         logic.rotate(moves[i].axis, moves[i].row, moves[i].direction);
                       });
@@ -41751,10 +41949,6 @@ function _shuffle() {
   }));
   return _shuffle.apply(this, arguments);
 }
-
-function solve() {
-  return;
-}
 },{"./logic/cubeLogic":"logic/cubeLogic.js","./view/cubeVisual":"view/cubeVisual.js","./view/eventContol":"view/eventContol.js","./logic/globals":"logic/globals.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -41783,7 +41977,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52995" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62538" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

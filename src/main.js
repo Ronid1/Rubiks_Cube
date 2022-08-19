@@ -3,20 +3,22 @@ import { cubeVisual } from "./view/cubeVisual";
 import { eventConstrol } from "./view/eventContol";
 import * as globals from "./logic/globals";
 
+const canvas = document.getElementById("canvas")
+
 const logic = new cubeLogic();
-const view = new cubeVisual(logic);
-const controls = new eventConstrol(logic, view);
+const view = new cubeVisual(logic, canvas);
+const controls = new eventConstrol(logic, view,canvas);
 
 // add control buttons
 const shuffleBtn = document.createElement("button");
 shuffleBtn.innerHTML = "Shuffle";
 document.getElementById("controls").appendChild(shuffleBtn);
-shuffleBtn.onclick = () => shuffle()
+shuffleBtn.onclick = () => shuffle();
 
-const solveBtn = document.createElement("button");
-solveBtn.innerHTML = "Solve";
-document.getElementById("controls").appendChild(solveBtn);
-solveBtn.onclick = () => solve()
+// const solveBtn = document.createElement("button");
+// solveBtn.innerHTML = "Solve";
+// document.getElementById("controls").appendChild(solveBtn);
+// solveBtn.onclick = () => solve()
 
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -30,13 +32,22 @@ async function shuffle() {
   view.rotate(firstMove.axis, firstMove.row, firstMove.direction);
 
   for (let i = 1; i < moves.length; i++) {
-    await delay(1500).then(() => {
+    await delay(850).then(() => {
       view.rotate(moves[i].axis, moves[i].row, moves[i].direction);
       logic.rotate(moves[i].axis, moves[i].row, moves[i].direction);
     });
   }
 }
 
-function solve(){
-    return
-}
+// function solve(){
+//     logic.rotate('x',0,1)
+//     view.rotate('x',0, 1)
+//     delay(2000).then(() => {
+//         logic.rotate('y',0,-1)
+//         view.rotate('y',0,-1)
+//     })
+//     delay(4000).then(() => {
+//         logic.rotate('z',2,-1)
+//         view.rotate('z',2,-1)
+//     })
+// }

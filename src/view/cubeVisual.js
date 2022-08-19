@@ -2,13 +2,16 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import * as globals from "../logic/globals";
 
+const FACES = { right: 0, left: 1, top: 2, bottom: 3, front: 4, back: 5 };
+
 export class cubeVisual {
-  constructor(cubeLogic) {
+  constructor(cubeLogic, canvas) {
     //scene managment
+    this.canvas = canvas;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       75,
-      window.innerWidth / window.innerHeight,
+      this.canvas.clientWidth / this.canvas.clientHeight,
       0.1,
       1000
     );
@@ -31,9 +34,10 @@ export class cubeVisual {
   }
 
   initiateScene() {
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(this.renderer.domElement);
+    this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+    this.canvas.appendChild(this.renderer.domElement);
     this.renderer.render(this.scene, this.camera);
+    this.renderer.setClearColor(0x000000, 0);
 
     //set lights and camera
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -41,7 +45,7 @@ export class cubeVisual {
     const directLight = new THREE.AmbientLight(0xffffff, 0.7);
     directLight.position.set(10, 20, 0);
     this.scene.add(directLight);
-    this.camera.position.set(5, 3, -3);
+    this.camera.position.set(5, 2, -3);
 
     window.addEventListener("resize", this.onWindowResize, false);
   }
@@ -53,9 +57,9 @@ export class cubeVisual {
   }
 
   onWindowResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.aspect = this.canvas.clientWidth / this.canvas.clientHeight;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth / window.innerHeight);
+    this.renderer.setSize(this.canvas.clientWidth / this.canvas.clientHeight);
   }
 
   initiateRubiks() {
@@ -105,18 +109,44 @@ export class cubeVisual {
   paintCube(index) {
     const numOfFaces = 6;
     let material = [];
-    const Faces = { right: 0, left: 1, top: 2, bottom: 3, front: 4, back: 5 };
     const defaultColor = new THREE.MeshPhongMaterial({ color: "#1e1e1f" });
 
     [...Array(numOfFaces)].forEach(() => material.push(defaultColor));
 
     const visableFaces = this.indexToFaces[index];
     visableFaces.forEach((face) => {
-      material[Faces[face]] = new THREE.MeshPhongMaterial({
+      material[FACES[face]] = new THREE.MeshPhongMaterial({
         color: this.getCellsColor(face, index),
       });
     });
     return material;
+  }
+
+  highlight(face, index) {
+    let highlightColors = {
+      red: "#780101",
+      "#e8651a": "#c94c04",
+      yellow: "#858503",
+      white: "#8c8989",
+      green: "#025902",
+      blue: "#020269",
+    };
+
+    let color = this.getCellsColor(face, index);
+    if (!color) return -1;
+
+    let cubie = this.cubes[index];
+    cubie.material[FACES[face]] = new THREE.MeshPhongMaterial({
+      color: highlightColors[color],
+    });
+  }
+
+  stopHighlight(face, index) {
+    let color = this.getCellsColor(face, index);
+    let cubie = this.cubes[index];
+    cubie.material[FACES[face]] = new THREE.MeshPhongMaterial({
+      color: color,
+    });
   }
 
   mapFaceToIndex() {
@@ -183,7 +213,8 @@ export class cubeVisual {
   }
 
   getCellsColor(face, cubeIndex) {
-    let row, col;
+    let row = -1,
+      col = -1;
     this.faceToindex[face].forEach((val, r) => {
       for (let i = 0; i < this.faceToindex[face].length; i++) {
         if (this.faceToindex[face][r][i] === cubeIndex) {
@@ -193,15 +224,14 @@ export class cubeVisual {
         }
       }
     });
+    if (row === -1) return null;
     return this.cubeLogic.getState()[face][row][col];
   }
 
   getCubeIndex(thisCubeId) {
-    let val;
-    this.cubes.forEach((cube, index) => {
-      if (cube.id === thisCubeId) val = index;
-    });
-    return val;
+    for (let index = 0; index < this.cubes.length; index++) {
+      if (this.cubes[index].id === thisCubeId) return index;
+    }
   }
 
   createLayer(axis, rowNum) {
@@ -283,7 +313,7 @@ export class cubeVisual {
 
   async rotationAnimation(layer, axis, direction) {
     const DEGREE90 = 1.57;
-    let step = 0.02;
+    let step = 0.04;
     let angle = DEGREE90;
     if (direction === globals.DIRECTIONS.clockwise) {
       angle = -DEGREE90;

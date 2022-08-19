@@ -109,7 +109,8 @@ export class cubeLogic {
             });
           } else {
             this.cubeState[face].forEach((row, i) => {
-              this.cubeState[face][lastRow - i][rowNum] = copyBottom.reverse()[i];
+              this.cubeState[face][lastRow - i][rowNum] =
+                copyBottom.reverse()[i];
             });
           }
           break;
@@ -148,12 +149,14 @@ export class cubeLogic {
           });
         } else {
           let col = colNum;
+          let colToCopy = colNum;
           if (face === "back") col = reverseColNum;
+          if (face === "top" && nextFace === "back")
+            colToCopy = lastRow - colToCopy;
 
           this.cubeState[face].map((row, i) => {
-            if (nextFace === "back" || face === "back")
-              i = globals.ROW_SIZE - 1 - i;
-            row[col] = this.cubeState[nextFace][i][colNum];
+            if (nextFace === "back" || face === "back") i = lastRow - i;
+            row[col] = this.cubeState[nextFace][i][colToCopy];
           });
         }
       });
@@ -167,22 +170,26 @@ export class cubeLogic {
 
     if (direction === globals.DIRECTIONS.clockwise) {
       for (let i = 0; i < globals.ROW_SIZE; i++) {
-        let index = i
+        let index = i;
         let colCopy = faceCopy.map((row) => {
           return row[i];
         });
-        if (face === "bottom" || face === "right" || face === "back") index = lastRow - index;
-        if (face === "front" || face === "top" || face === "left") colCopy = colCopy.reverse();
+        if (face === "bottom" || face === "right" || face === "back")
+          index = lastRow - index;
+        if (face === "front" || face === "top" || face === "left")
+          colCopy = colCopy.reverse();
         this.cubeState[face][index] = colCopy;
       }
     } else {
       for (let i = globals.ROW_SIZE - 1; i >= 0; i--) {
-        let index = i
+        let index = i;
         const colCopy = faceCopy.map((row) => {
           return row[i];
         });
-        if (face === "top" || face === "left" || face === "front") index = lastRow - index;
-        if (face === "back" || face === "bottom" || face === "right" ) colCopy = colCopy.reverse();
+        if (face === "top" || face === "left" || face === "front")
+          index = lastRow - index;
+        if (face === "back" || face === "bottom" || face === "right")
+          colCopy = colCopy.reverse();
         this.cubeState[face][index] = colCopy;
       }
     }
@@ -205,6 +212,4 @@ export class cubeLogic {
   random(max, min = 0) {
     return Math.floor(Math.random() * (max - min) + min);
   }
-
-  solve() {}
 }
