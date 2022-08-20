@@ -27,6 +27,19 @@ export class cubeLogic {
     }
   }
 
+  resetCube() {
+    let index = 0;
+
+    for (let face in this.cubeState) {
+      for (let i = 0; i < globals.ROW_SIZE; i++) {
+        for (let j = 0; j < globals.ROW_SIZE; j++) {
+          this.cubeState[face][i][j] = globals.COLORS[index];
+        }
+      }
+      index++;
+    }
+  }
+
   getState() {
     return this.cubeState;
   }

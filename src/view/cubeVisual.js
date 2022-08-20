@@ -45,7 +45,7 @@ export class cubeVisual {
     const directLight = new THREE.AmbientLight(0xffffff, 0.7);
     directLight.position.set(10, 20, 0);
     this.scene.add(directLight);
-    this.camera.position.set(5, 2, -3);
+    this.camera.position.set(4, 2, -3);
 
     window.addEventListener("resize", this.onWindowResize, false);
   }

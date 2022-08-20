@@ -1,10 +1,8 @@
 import { cubeLogic } from "./logic/cubeLogic";
 import { cubeVisual } from "./view/cubeVisual";
 import { eventConstrol } from "./view/eventContol";
-import * as globals from "./logic/globals";
 
 const canvas = document.getElementById("canvas")
-
 const logic = new cubeLogic();
 const view = new cubeVisual(logic, canvas);
 const controls = new eventConstrol(logic, view,canvas);
@@ -14,6 +12,11 @@ const shuffleBtn = document.createElement("button");
 shuffleBtn.innerHTML = "Shuffle";
 document.getElementById("controls").appendChild(shuffleBtn);
 shuffleBtn.onclick = () => shuffle();
+
+const resetBtn = document.createElement("button");
+resetBtn.innerHTML = "Reset";
+document.getElementById("controls").appendChild(resetBtn);
+resetBtn.onclick = () => reset();
 
 // const solveBtn = document.createElement("button");
 // solveBtn.innerHTML = "Solve";
@@ -37,6 +40,11 @@ async function shuffle() {
       logic.rotate(moves[i].axis, moves[i].row, moves[i].direction);
     });
   }
+}
+
+function reset(){
+  logic.resetCube();
+  view.repaintRubiks();
 }
 
 // function solve(){
