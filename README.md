@@ -1,5 +1,5 @@
 # Rubiks Cube
-This is a 3D Rubiks cube game built using JavaScript and Three.JS librery.
+This is a 3D Rubiks cube game built using JavaScript and Three.JS library.
 
 ## How to Play?
 You can play by cloning the project and running it on your local machine.
